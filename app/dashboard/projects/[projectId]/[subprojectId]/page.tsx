@@ -9,23 +9,15 @@ import {
 } from "@/components/ui/sidebar"
 import { SubprojectDetailPage } from "@/components/@components/projects/SubprojectDetailPage"
 
-// Type pour les paramètres après le unwrap
-interface PageParams {
-  projectId: string;
-  subprojectId: string;
-}
-
-export default function SubprojectDetailPageRoute({ 
-  params 
-}: { 
-  params: { 
+interface SubprojectDetailPageRouteProps {
+  params: {
     projectId: string;
     subprojectId: string;
-  } 
-}) {
-  // Déballer params avec React.use() et forcer le type
-  const unwrappedParams = React.use(params as any) as PageParams;
-  const { projectId, subprojectId } = unwrappedParams;
+  }
+}
+
+export default function SubprojectDetailPageRoute({ params }: SubprojectDetailPageRouteProps) {
+  const { projectId, subprojectId } = params;
   
   return (
     <SidebarProvider>
@@ -44,10 +36,7 @@ export default function SubprojectDetailPageRoute({
           </header>
           <main className="flex-1 min-h-0 p-4">
             <div className="flex flex-col h-full">
-              <SubprojectDetailPage 
-                projectId={projectId}
-                subprojectId={subprojectId}
-              />
+              <SubprojectDetailPage projectId={projectId} subprojectId={subprojectId} />
             </div>
           </main>
         </div>

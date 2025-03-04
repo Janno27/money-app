@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Plus, ArrowRight, Folder, Search } from "lucide-react"
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -64,6 +63,24 @@ interface SubProject {
   description?: string;
 }
 
+interface ProjectData {
+  id: string;
+  name: string;
+  iconName: string;
+  color?: string;
+  subprojects?: SubProjectData[];
+  description?: string;
+  createdAt?: string;
+}
+
+interface SubProjectData {
+  id: string;
+  name: string;
+  parentId: string;
+  color?: string;
+  description?: string;
+}
+
 const getIconByName = (iconName: string): LucideIcon => {
   const iconMap: Record<string, LucideIcon> = {
     Terminal: SquareTerminal,
@@ -115,7 +132,7 @@ export function ProjectsPage() {
       const savedProjects = localStorage.getItem("projects")
       if (savedProjects) {
         try {
-          const parsedProjects = JSON.parse(savedProjects)
+          const parsedProjects = JSON.parse(savedProjects) as ProjectData[]
           setProjects(parsedProjects)
         } catch (err) {
           console.error("Erreur lors du chargement des projets:", err)
@@ -249,13 +266,13 @@ export function ProjectsPage() {
                         </div>
                       )}
                     </CardContent>
-                    <CardFooter className="flex justify-between">
-                      <div className="text-xs text-muted-foreground">
-                        {project.createdAt ? new Date(project.createdAt).toLocaleDateString() : ""}
+                    <CardFooter>
+                      <div className="flex items-center justify-between w-full text-sm text-muted-foreground">
+                        <span>Créé le {new Date(project.createdAt || Date.now()).toLocaleDateString("fr-FR")}</span>
+                        <Button variant="ghost" size="sm" className="gap-1 ml-auto -mr-2">
+                          Voir <ArrowRight className="h-3 w-3" />
+                        </Button>
                       </div>
-                      <Button variant="ghost" size="sm" className="gap-1">
-                        Détails <ArrowRight className="h-3 w-3" />
-                      </Button>
                     </CardFooter>
                   </Card>
                 ))}

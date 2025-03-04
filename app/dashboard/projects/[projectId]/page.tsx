@@ -9,15 +9,14 @@ import {
 } from "@/components/ui/sidebar"
 import { ProjectDetailPage } from "@/components/@components/projects/ProjectDetailPage"
 
-// Type pour les paramètres après le unwrap
-interface PageParams {
-  projectId: string;
+interface ProjectDetailPageRouteProps {
+  params: {
+    projectId: string;
+  }
 }
 
-export default function ProjectDetailPageRoute({ params }: { params: { projectId: string } }) {
-  // Déballer params avec React.use() et forcer le type
-  const unwrappedParams = React.use(params as any) as PageParams;
-  const { projectId } = unwrappedParams;
+export default function ProjectDetailPageRoute({ params }: ProjectDetailPageRouteProps) {
+  const projectId = params.projectId;
   
   return (
     <SidebarProvider>

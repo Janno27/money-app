@@ -2,15 +2,13 @@
 
 import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Edit, Folder, MoreHorizontal, Plus, Calendar, Users, MessageSquare, CheckSquare, Clock, BarChart } from "lucide-react"
+import { ArrowLeft, Edit, Folder, MoreHorizontal, Plus, Calendar, Users, MessageSquare, CheckSquare, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Progress } from "@/components/ui/progress"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Separator } from "@/components/ui/separator"
 import { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -25,6 +23,24 @@ interface Project {
 }
 
 interface SubProject {
+  id: string;
+  name: string;
+  parentId: string;
+  color?: string;
+  description?: string;
+}
+
+interface ProjectData {
+  id: string;
+  name: string;
+  iconName: string;
+  color?: string;
+  subprojects?: SubProjectData[];
+  description?: string;
+  createdAt?: string;
+}
+
+interface SubProjectData {
   id: string;
   name: string;
   parentId: string;
@@ -51,14 +67,14 @@ export function SubprojectDetailPage({ projectId, subprojectId }: { projectId: s
       
       if (savedProjects) {
         try {
-          const parsedProjects = JSON.parse(savedProjects)
-          const foundProject = parsedProjects.find((p: any) => p.id === projectId)
+          const parsedProjects = JSON.parse(savedProjects) as ProjectData[]
+          const foundProject = parsedProjects.find((p) => p.id === projectId)
           
           if (foundProject) {
             setProject(foundProject)
             
             if (foundProject.subprojects) {
-              const foundSubproject = foundProject.subprojects.find((s: any) => s.id === subprojectId)
+              const foundSubproject = foundProject.subprojects.find((s) => s.id === subprojectId)
               if (foundSubproject) {
                 setSubproject(foundSubproject)
               }
@@ -96,7 +112,7 @@ export function SubprojectDetailPage({ projectId, subprojectId }: { projectId: s
         <Folder className="h-16 w-16 text-muted-foreground mb-4 opacity-30" />
         <h3 className="text-lg font-medium">Sous-projet non trouvé</h3>
         <p className="text-muted-foreground mt-1">
-          Le sous-projet que vous recherchez n'existe pas ou a été supprimé
+          Le sous-projet que vous recherchez n&apos;existe pas ou a été supprimé
         </p>
         <Button 
           className="mt-4" 

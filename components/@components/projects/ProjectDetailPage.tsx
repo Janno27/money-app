@@ -60,6 +60,16 @@ interface SubProject {
   description?: string;
 }
 
+interface ProjectData {
+  id: string;
+  name: string;
+  iconName: string;
+  color?: string;
+  subprojects?: SubProject[];
+  description?: string;
+  createdAt?: string;
+}
+
 const getIconByName = (iconName: string): LucideIcon => {
   const iconMap: Record<string, LucideIcon> = {
     Terminal: SquareTerminal,
@@ -112,8 +122,8 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
       
       if (savedProjects) {
         try {
-          const parsedProjects = JSON.parse(savedProjects)
-          const foundProject = parsedProjects.find((p: any) => p.id === projectId)
+          const parsedProjects = JSON.parse(savedProjects) as ProjectData[]
+          const foundProject = parsedProjects.find((p) => p.id === projectId)
           
           if (foundProject) {
             setProject(foundProject)
@@ -150,7 +160,7 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
         <Folder className="h-16 w-16 text-muted-foreground mb-4 opacity-30" />
         <h3 className="text-lg font-medium">Projet non trouvé</h3>
         <p className="text-muted-foreground mt-1">
-          Le projet que vous recherchez n'existe pas ou a été supprimé
+          Le projet que vous recherchez n&apos;existe pas ou a été supprimé
         </p>
         <Button className="mt-4" onClick={() => router.push('/dashboard/projects')}>
           Retour aux projets
@@ -198,7 +208,7 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
         >
           <TabsList className="mb-2">
             {(!project.subprojects || project.subprojects.length === 0) ? (
-              <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
+              <TabsTrigger value="overview">Vue d&apos;ensemble</TabsTrigger>
             ) : (
               project.subprojects.map(subproject => (
                 <TabsTrigger 
