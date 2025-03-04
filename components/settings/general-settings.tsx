@@ -1,0 +1,129 @@
+"use client"
+
+import * as React from "react"
+import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { TrashIcon, AlertCircle } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+
+export function GeneralSettings() {
+  const [tokenUsage, setTokenUsage] = React.useState(true)
+  const [darkMode, setDarkMode] = React.useState(true)
+  const [notifications, setNotifications] = React.useState(true)
+  const [confirmDelete, setConfirmDelete] = React.useState(false)
+
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-6 space-y-8 pb-20">
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Préférences d&apos;affichage</h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="dark-mode">Mode sombre</Label>
+                <p className="text-sm text-muted-foreground">
+                  Activer le thème sombre pour l&apos;application
+                </p>
+              </div>
+              <Switch
+                id="dark-mode"
+                checked={darkMode}
+                onCheckedChange={setDarkMode}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Données</h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="token-usage">Utilisation des données</Label>
+                <p className="text-sm text-muted-foreground">
+                  Autoriser la collecte de données anonymes pour améliorer l&apos;application
+                </p>
+              </div>
+              <Switch
+                id="token-usage"
+                checked={tokenUsage}
+                onCheckedChange={setTokenUsage}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="notifications">Notifications</Label>
+                <p className="text-sm text-muted-foreground">
+                  Recevoir des notifications sur l&apos;activité de l&apos;application
+                </p>
+              </div>
+              <Switch
+                id="notifications"
+                checked={notifications}
+                onCheckedChange={setNotifications}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Gestion des données</h3>
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Ces actions sont irréversibles. Veuillez procéder avec prudence.
+            </p>
+            <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+              <DialogTrigger asChild>
+                <Button variant="destructive" size="sm" className="mt-2">
+                  <TrashIcon className="mr-2 h-4 w-4" />
+                  Supprimer toutes les données
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-destructive">
+                    <AlertCircle className="h-5 w-5" />
+                    Confirmation de suppression
+                  </DialogTitle>
+                  <DialogDescription>
+                    Cette action supprimera définitivement toutes vos données. Cette action est irréversible.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="py-4">
+                  <p className="text-sm font-medium">
+                    Êtes-vous absolument sûr de vouloir continuer ?
+                  </p>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setConfirmDelete(false)}>
+                    Annuler
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => {
+                      // Implémenter la logique de suppression ici
+                      setConfirmDelete(false)
+                    }}
+                  >
+                    Supprimer définitivement
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+      </div>
+    </ScrollArea>
+  )
+} 

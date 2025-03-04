@@ -1,0 +1,295 @@
+import { useState, useEffect } from "react"
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { ChevronRight, ChevronDown } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
+
+interface Category {
+  id: string
+  name: string
+  amount: number
+  percentage: number
+  subcategories: {
+    id: string
+    name: string
+    amount: number
+    percentage: number
+    globalPercentage: number
+    categoryName: string
+  }[]
+}
+
+interface EvolutionDistributionProps {
+  showAllSubcategories: boolean
+}
+
+export function EvolutionDistribution({ showAllSubcategories }: EvolutionDistributionProps) {
+  const [expenseCategories, setExpenseCategories] = useState<Category[]>([])
+  const [incomeCategories, setIncomeCategories] = useState<Category[]>([])
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
+  const [isLoading, setIsLoading] = useState(true)
+  const [totalExpenses, setTotalExpenses] = useState(0)
+  const [totalIncome, setTotalIncome] = useState(0)
+  const supabase = createClientComponentClient()
+
+  const toggleCategory = (categoryId: string) => {
+    const newExpanded = new Set(expandedCategories)
+    if (newExpanded.has(categoryId)) {
+      newExpanded.delete(categoryId)
+    } else {
+      newExpanded.add(categoryId)
+    }
+    setExpandedCategories(newExpanded)
+  }
+
+  const fetchData = async () => {
+    setIsLoading(true)
+    try {
+      const currentYear = new Date().getFullYear()
+      const startDate = new Date(currentYear, 0, 1)
+      const endDate = new Date(currentYear, 11, 31)
+
+      const { data: transactions, error } = await supabase
+        .from('transactions_with_refunds')
+        .select(`
+          *,
+          category:categories(id, name),
+          subcategory:subcategories(id, name)
+        `)
+        .gte('accounting_date', startDate.toISOString())
+        .lte('accounting_date', endDate.toISOString())
+
+      if (error) throw error
+
+      const expenseTotals: { [key: string]: number } = {}
+      const incomeTotals: { [key: string]: number } = {}
+      const expenseSubTotals: { [key: string]: { [key: string]: number } } = {}
+      const incomeSubTotals: { [key: string]: { [key: string]: number } } = {}
+      let totalExpensesSum = 0
+      let totalIncomeSum = 0
+
+      transactions?.forEach(transaction => {
+        const amount = Math.abs(transaction.final_amount)
+        const categoryId = transaction.category.id
+        const categoryName = transaction.category.name
+        const subcategoryId = transaction.subcategory?.id
+        const subcategoryName = transaction.subcategory?.name
+
+        if (transaction.is_income) {
+          totalIncomeSum += amount
+          incomeTotals[categoryId] = (incomeTotals[categoryId] || 0) + amount
+          if (subcategoryId) {
+            incomeSubTotals[categoryId] = incomeSubTotals[categoryId] || {}
+            incomeSubTotals[categoryId][subcategoryId] = (incomeSubTotals[categoryId][subcategoryId] || 0) + amount
+          }
+        } else {
+          totalExpensesSum += amount
+          expenseTotals[categoryId] = (expenseTotals[categoryId] || 0) + amount
+          if (subcategoryId) {
+            expenseSubTotals[categoryId] = expenseSubTotals[categoryId] || {}
+            expenseSubTotals[categoryId][subcategoryId] = (expenseSubTotals[categoryId][subcategoryId] || 0) + amount
+          }
+        }
+      })
+
+      setTotalExpenses(totalExpensesSum)
+      setTotalIncome(totalIncomeSum)
+
+      const processCategories = (
+        totals: { [key: string]: number },
+        subTotals: { [key: string]: { [key: string]: number } },
+        total: number
+      ): Category[] => {
+        const categories = Object.entries(totals)
+          .map(([categoryId, amount]) => {
+            const categoryName = transactions?.find(t => t.category.id === categoryId)?.category.name || ''
+            return {
+              id: categoryId,
+              name: categoryName,
+              amount,
+              percentage: (amount / total) * 100,
+              subcategories: Object.entries(subTotals[categoryId] || {}).map(([subId, subAmount]) => ({
+                id: subId,
+                name: transactions?.find(t => t.subcategory?.id === subId)?.subcategory.name || '',
+                amount: subAmount,
+                percentage: (subAmount / amount) * 100,
+                globalPercentage: (subAmount / total) * 100,
+                categoryName
+              })).sort((a, b) => b.amount - a.amount)
+            }
+          })
+          .sort((a, b) => b.amount - a.amount)
+
+        return categories
+      }
+
+      setExpenseCategories(processCategories(expenseTotals, expenseSubTotals, totalExpensesSum))
+      setIncomeCategories(processCategories(incomeTotals, incomeSubTotals, totalIncomeSum))
+    } catch (error) {
+      console.error('Error fetching data:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+  const renderCategory = (category: Category) => {
+    const isExpanded = expandedCategories.has(category.id)
+    const hasSubcategories = category.subcategories.length > 0
+
+    return (
+      <div key={category.id} className="space-y-1.5 mb-3">
+        <div
+          className={cn(
+            "flex items-center gap-2 py-1.5 hover:bg-muted/50 rounded-sm",
+            hasSubcategories && "cursor-pointer"
+          )}
+          onClick={() => hasSubcategories && toggleCategory(category.id)}
+        >
+          {hasSubcategories && (
+            <div className="w-4">
+              {isExpanded ? (
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              )}
+            </div>
+          )}
+          <div className="flex-1 flex items-center justify-between gap-4">
+            <span className="text-sm">{category.name}</span>
+            <div className="flex items-center gap-2">
+              <div className="w-[120px] h-2 bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-foreground transition-all duration-1000 ease-out"
+                  style={{ width: `${category.percentage}%` }}
+                />
+              </div>
+              <span className="text-sm text-muted-foreground w-12 text-right">
+                {category.percentage.toFixed(1)}%
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {isExpanded && (
+          <div className="pl-6 space-y-1.5 pt-1 pb-2">
+            {category.subcategories.map((sub, index) => (
+              <div
+                key={sub.id}
+                className="flex items-center justify-between gap-4 py-0.5"
+              >
+                <span className="text-xs text-muted-foreground">{sub.name}</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-[100px] h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-muted-foreground transition-all duration-1000 ease-out"
+                      style={{ 
+                        width: `${sub.percentage}%`,
+                        transitionDelay: `${index * 100}ms`
+                      }}
+                    />
+                  </div>
+                  <span className="text-xs text-muted-foreground w-12 text-right">
+                    {sub.percentage.toFixed(1)}%
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  const renderAllSubcategories = (categories: Category[], isExpenses: boolean) => {
+    const allSubcategories = categories.flatMap(category => 
+      category.subcategories.map(sub => ({
+        ...sub,
+        categoryName: category.name
+      }))
+    ).sort((a, b) => b.globalPercentage - a.globalPercentage)
+
+    const allSortedSubcategories = allSubcategories
+
+    return (
+      <div className="space-y-3">
+        {allSortedSubcategories.map((sub, index) => (
+          <div key={sub.id} className="flex items-center justify-between gap-4 py-1">
+            <span className="text-xs">{sub.name} <span className="text-xs text-muted-foreground">({sub.categoryName})</span></span>
+            <div className="flex items-center gap-2">
+              <div className="w-[120px] h-1.5 bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-foreground transition-all duration-1000 ease-out"
+                  style={{ 
+                    width: `${sub.globalPercentage}%`,
+                    transitionDelay: `${index * 50}ms`
+                  }}
+                />
+              </div>
+              <span className="text-xs text-muted-foreground w-12 text-right">
+                {sub.globalPercentage.toFixed(1)}%
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return <div className="h-full flex items-center justify-center">Chargement...</div>
+  }
+
+  return (
+    <div className="h-full flex flex-col">
+      <Tabs defaultValue="expenses" className="h-full flex flex-col">
+        <div className="flex-none">
+          <TabsList className="w-full grid grid-cols-2">
+            <TabsTrigger value="expenses">Dépenses</TabsTrigger>
+            <TabsTrigger value="income">Revenus</TabsTrigger>
+          </TabsList>
+        </div>
+
+        <div className="flex-1 min-h-0 mt-4">
+          <TabsContent 
+            value="expenses" 
+            className="h-full data-[state=active]:flex data-[state=active]:flex-col"
+            style={{ height: '100%' }}
+          >
+            <ScrollArea className="h-full w-full" type="always">
+              <div className="pr-4 pb-12">
+                {showAllSubcategories ? (
+                  renderAllSubcategories(expenseCategories, true)
+                ) : (
+                  expenseCategories.map(renderCategory)
+                )}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+
+          <TabsContent 
+            value="income" 
+            className="h-full data-[state=active]:flex data-[state=active]:flex-col"
+            style={{ height: '100%' }}
+          >
+            <ScrollArea className="h-full w-full" type="always">
+              <div className="pr-4 pb-12">
+                {showAllSubcategories ? (
+                  renderAllSubcategories(incomeCategories, false)
+                ) : (
+                  incomeCategories.map(renderCategory)
+                )}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+        </div>
+      </Tabs>
+    </div>
+  )
+} 
