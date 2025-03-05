@@ -9,14 +9,11 @@ import {
 } from "@/components/ui/sidebar"
 import { SubprojectDetailPage } from "@/components/@components/projects/SubprojectDetailPage"
 
-interface SubprojectDetailPageRouteProps {
-  params: {
-    projectId: string;
-    subprojectId: string;
-  }
-}
-
-export default function SubprojectDetailPageRoute({ params }: SubprojectDetailPageRouteProps) {
+export default function SubprojectDetailPageRoute({
+  params,
+}: {
+  params: { projectId: string; subprojectId: string }
+}) {
   const { projectId, subprojectId } = params;
   
   return (

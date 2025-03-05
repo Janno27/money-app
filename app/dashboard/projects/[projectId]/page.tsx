@@ -9,13 +9,11 @@ import {
 } from "@/components/ui/sidebar"
 import { ProjectDetailPage } from "@/components/@components/projects/ProjectDetailPage"
 
-interface ProjectDetailPageRouteProps {
-  params: {
-    projectId: string;
-  }
-}
-
-export default function ProjectDetailPageRoute({ params }: ProjectDetailPageRouteProps) {
+export default function ProjectDetailPageRoute({
+  params,
+}: {
+  params: { projectId: string }
+}) {
   const projectId = params.projectId;
   
   return (
