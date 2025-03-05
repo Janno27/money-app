@@ -48,7 +48,12 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "MoneyApp"
+    title: "MoneyApp",
+    startupImage: [
+      {
+        url: "/logo-removebg-preview.png"
+      }
+    ]
   },
   manifest: "/manifest.json"
 };
