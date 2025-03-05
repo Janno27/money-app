@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: "/logo-removebg-preview.png",
+        url: "/icon.png",
         type: "image/png",
         sizes: "180x180"
       },
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     ],
     apple: [
       {
-        url: "/logo-removebg-preview.png",
+        url: "/icon.png",
         type: "image/png",
         sizes: "180x180"
       }
