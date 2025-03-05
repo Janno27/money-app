@@ -69,9 +69,10 @@ interface CalendarViewProps {
   onTransactionsChange?: () => void
   events: Event[]
   onEventsChange?: () => void
+  onEventEdit?: (event: Event) => void
 }
 
-export function CalendarView({ currentDate, transactions, onTransactionsChange, events, onEventsChange }: CalendarViewProps) {
+export function CalendarView({ currentDate, transactions, onTransactionsChange, events, onEventsChange, onEventEdit }: CalendarViewProps) {
   const [isAddExpenseDialogOpen, setIsAddExpenseDialogOpen] = useState(false)
   const [isAddIncomeDialogOpen, setIsAddIncomeDialogOpen] = useState(false)
   const [isAddEventDialogOpen, setIsAddEventDialogOpen] = useState(false)
