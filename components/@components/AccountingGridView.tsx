@@ -42,6 +42,8 @@ interface AccountingGridViewProps {
   comparisonMode: ComparisonMode
   selectedMonths: string[]
   className?: string
+  onSearchChange?: (value: string) => void
+  onDateRangeChange?: (range: { from: Date | null; to: Date | null }) => void
 }
 
 interface CategoryData {
@@ -104,7 +106,9 @@ export const AccountingGridView = React.forwardRef<
   isIncome,
   comparisonMode,
   selectedMonths,
-  className
+  className,
+  onSearchChange,
+  onDateRangeChange
 }, ref) => {
   const [data, setData] = React.useState<CategoryData[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
