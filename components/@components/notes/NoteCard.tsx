@@ -59,7 +59,7 @@ export function NoteCard({ note, onUpdate, onDelete }: NoteCardProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Avatar className="h-6 w-6">
-              <AvatarImage src={note.user?.avatar} />
+              <AvatarImage src={note.user?.avatar || undefined} />
               <AvatarFallback>{note.user?.name?.[0] || "U"}</AvatarFallback>
             </Avatar>
             <span className="text-sm font-medium">{note.user?.name || "Utilisateur"}</span>
