@@ -35,6 +35,7 @@ interface AccountingFiltersProps {
   onToggleAllCategories?: () => void
   onComparisonModeChange?: (mode: ComparisonMode, selectedMonths?: string[]) => void
   comparisonMode?: ComparisonMode
+  onDateRangeChange?: (range: { from: Date | null; to: Date | null }) => void
 }
 
 export function AccountingFilters({
@@ -43,7 +44,8 @@ export function AccountingFilters({
   onRefresh,
   onToggleAllCategories,
   onComparisonModeChange,
-  comparisonMode = 'month-to-month'
+  comparisonMode = 'month-to-month',
+  onDateRangeChange
 }: AccountingFiltersProps) {
   const [open, setOpen] = React.useState(false)
   const [transactions, setTransactions] = React.useState<Transaction[]>([])
