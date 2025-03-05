@@ -1,0 +1,16 @@
+{
+  "name": "MoneyApp",
+  "short_name": "MoneyApp",
+  "description": "Application de gestion familiale",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0ea5e9",
+  "icons": [
+    {
+      "src": "/logo-removebg-preview.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+} 

@@ -1,10 +1,10 @@
-import { SquareTerminal, Settings2, LucideIcon } from "lucide-react"
+import { SquareTerminal, Settings2, Calendar, LucideIcon } from "lucide-react"
 
 // Définition du type pour les éléments de navigation
 export interface NavMainItem {
   title: string;
   url: string | null;
-  icon: LucideIcon; // Utilisation du type LucideIcon au lieu de any
+  icon: LucideIcon;
   isActive?: boolean;
   items?: {
     title: string;
@@ -27,18 +27,15 @@ export const data = {
           url: "/dashboard/accounting",
         },
         {
-          title: "Catégories",
-          url: "#",
-        },
-        {
           title: "Évolution",
           url: "/dashboard/evolution",
         },
-        {
-          title: "Calendrier",
-          url: "/dashboard/calendar",
-        },
       ],
+    },
+    {
+      title: "Calendrier",
+      url: "/dashboard/calendar",
+      icon: Calendar,
     },
     {
       title: "Settings",

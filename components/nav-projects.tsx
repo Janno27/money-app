@@ -376,10 +376,10 @@ export function NavProjects() {
             projects.map((project) => (
               <React.Fragment key={project.id}>
                 <SidebarMenuItem className="group">
-                  <div className="flex items-center gap-2 flex-1 cursor-pointer px-2 py-1.5 rounded-md hover:bg-sidebar-background-highlight" onClick={(e) => toggleProject(project.id, e)}>
+                  <div className="flex items-center gap-1.5 flex-1 cursor-pointer px-1.5 py-1 rounded-md hover:bg-sidebar-background-highlight" onClick={(e) => toggleProject(project.id, e)}>
                     <project.icon 
                       className={cn(
-                        "h-4 w-4", 
+                        "h-3.5 w-3.5", 
                         project.color ? "" : "text-sidebar-foreground",
                       )}
                       style={project.color ? { color: project.color } : {}}
@@ -387,7 +387,7 @@ export function NavProjects() {
                     />
                     <span 
                       className={cn(
-                        "text-sm",
+                        "text-xs",
                         project.color ? "" : "text-sidebar-foreground"
                       )}
                       style={project.color ? { color: project.color } : {}}
@@ -431,16 +431,16 @@ export function NavProjects() {
                 </SidebarMenuItem>
                 
                 {expandedProjects.has(project.id) && project.subprojects && project.subprojects.length > 0 && (
-                  <div className="ml-4 pl-2 border-l border-sidebar-background-highlight space-y-1 mb-2">
+                  <div className="ml-4 pl-1.5 border-l border-sidebar-background-highlight space-y-0.5 mb-1.5">
                     {project.subprojects.map((subproject) => (
                       <SidebarMenuItem key={subproject.id} className="pl-0 group">
                         <div 
-                          className="flex items-center gap-2 flex-1 px-2 py-1.5 rounded-md hover:bg-sidebar-background-highlight cursor-pointer"
+                          className="flex items-center gap-1.5 flex-1 px-1.5 py-0.5 rounded-md hover:bg-sidebar-background-highlight cursor-pointer"
                           onClick={(e) => navigateToSubproject(project.id, subproject.id, e)}
                         >
                           <span 
                             className={cn(
-                              "text-sm ml-2",
+                              "text-[11px] ml-1.5",
                               subproject.color ? "" : "text-sidebar-foreground/90"
                             )}
                             style={subproject.color ? { color: subproject.color } : {}}

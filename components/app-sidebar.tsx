@@ -7,6 +7,9 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarRail,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
 } from "@/components/ui/sidebar"
 import { SettingsDialog } from "@/components/settings/settings-dialog"
 import { NavProjects } from "@/components/nav-projects"
@@ -15,20 +18,27 @@ import { NavUser } from "@/components/nav-user"
 import { LogoSwitcher } from "@/components/logo-switcher"
 import { data, NavMainItem } from "@/lib/data"
 
+function NavSettings({ onSettingsClick }: { onSettingsClick: () => void }) {
+  const settingsItem = data.navMain.find(item => item.title === "Settings")
+  if (!settingsItem) return null
+
+  return (
+    <SidebarMenu>
+      <SidebarMenuItem>
+        <SidebarMenuButton onClick={onSettingsClick}>
+          <settingsItem.icon />
+          <span>{settingsItem.title}</span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    </SidebarMenu>
+  )
+}
+
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [settingsOpen, setSettingsOpen] = React.useState(false)
   
-  // Mise à jour des items pour gérer l'ouverture de la modale Settings
   const navItems = React.useMemo<NavMainItem[]>(() => {
-    return data.navMain.map(item => {
-      if (item.title === "Settings") {
-        return {
-          ...item,
-          onItemClick: () => setSettingsOpen(true)
-        } as NavMainItem
-      }
-      return item
-    })
+    return data.navMain.filter(item => item.title !== "Settings")
   }, [])
 
   return (
@@ -42,6 +52,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <NavProjects />
         </SidebarContent>
         <SidebarFooter>
+          <NavSettings onSettingsClick={() => setSettingsOpen(true)} />
           <NavUser />
         </SidebarFooter>
         <SidebarRail />
