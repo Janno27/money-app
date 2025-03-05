@@ -15,13 +15,11 @@ import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-const NOTES_KEYBOARD_SHORTCUT = "n"
-
 export function NotesDrawer() {
   const [open, setOpen] = useState(false)
   const [notes, setNotes] = useState<Note[]>([])
   const [filteredNotes, setFilteredNotes] = useState<Note[]>([])
-  const [currentUser, setCurrentUser] = useState<any>(null)
+  const [currentUser, setCurrentUser] = useState<{ id: string; name: string | null } | null>(null)
   const [creators, setCreators] = useState<{id: string, name: string}[]>([])
   const [selectedCreator, setSelectedCreator] = useState<string>("all")
   const supabase = createClientComponentClient()
@@ -192,7 +190,8 @@ export function NotesDrawer() {
   }
 
   const handleUpdateNote = async (id: string, updates: Partial<Note>) => {
-    const { user, ...updateData } = updates
+    // Destructurer en ignorant le champ user qui n'est pas nécessaire pour l'update
+    const { user: _user, ...updateData } = updates
 
     const { data: note, error } = await supabase
       .from('notes')

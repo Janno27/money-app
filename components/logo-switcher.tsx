@@ -1,6 +1,5 @@
 import * as React from "react"
 import { Users } from "lucide-react"
-import { cn } from "@/lib/utils"
 
 import {
   SidebarMenu,

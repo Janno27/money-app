@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Edit, Folder, MoreHorizontal, Plus, Calendar, Users, MessageSquare, CheckSquare, Clock } from "lucide-react"
+import { ArrowLeft, Edit, Folder, MoreHorizontal, Plus, Users, MessageSquare, CheckSquare, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -46,11 +46,6 @@ interface SubProjectData {
   parentId: string;
   color?: string;
   description?: string;
-}
-
-const getIconByName = (iconName: string): LucideIcon => {
-  // Fonction simplifiée pour l'exemple - vous pouvez étendre cela avec tous vos icônes
-  return Folder;
 }
 
 export function SubprojectDetailPage({ projectId, subprojectId }: { projectId: string, subprojectId: string }) {

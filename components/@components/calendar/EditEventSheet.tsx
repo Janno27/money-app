@@ -33,11 +33,11 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { format } from "date-fns"
-import { fr } from "date-fns/locale"
 import { X } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
+import Image from "next/image"
 
 interface User {
   id: string
@@ -245,7 +245,7 @@ export function EditEventSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="flex flex-col w-[30%]">
         <SheetHeader className="px-6 py-6">
-          <SheetTitle>Modifier l'événement</SheetTitle>
+          <SheetTitle>Modifier l&apos;événement</SheetTitle>
           <SheetDescription>
             Modifiez les détails de votre événement
           </SheetDescription>
@@ -402,10 +402,12 @@ export function EditEventSheet({
                                 >
                                   <div className="flex items-center gap-1.5 w-full">
                                     {user.avatar ? (
-                                      <img
+                                      <Image
                                         src={user.avatar}
                                         alt={user.name}
                                         className="h-4 w-4 rounded-full object-cover flex-shrink-0"
+                                        width={16}
+                                        height={16}
                                       />
                                     ) : (
                                       <div className="h-4 w-4 rounded-full bg-muted flex items-center justify-center text-[0.5rem] flex-shrink-0">
@@ -432,10 +434,12 @@ export function EditEventSheet({
                         className="flex items-center gap-1 bg-muted rounded-full px-2 py-0.5 text-xs"
                       >
                         {participant.avatar ? (
-                          <img
+                          <Image
                             src={participant.avatar}
                             alt={participant.name}
                             className="h-4 w-4 rounded-full object-cover flex-shrink-0"
+                            width={16}
+                            height={16}
                           />
                         ) : (
                           <div className="h-4 w-4 rounded-full bg-background flex items-center justify-center text-[0.5rem] flex-shrink-0">

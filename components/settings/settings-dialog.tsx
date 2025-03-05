@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Settings, Tag, Sliders } from "lucide-react"
+import { Tag, Sliders } from "lucide-react"
 import {
   Dialog,
   DialogContent,

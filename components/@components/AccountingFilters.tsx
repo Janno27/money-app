@@ -31,7 +31,6 @@ export type ComparisonMode = 'month-to-month' | 'month-to-average'
 interface AccountingFiltersProps {
   className?: string
   onSearchChange: (value: string) => void
-  onDateRangeChange: (range: { from: Date | null; to: Date | null }) => void
   onRefresh?: () => void
   onToggleAllCategories?: () => void
   onComparisonModeChange?: (mode: ComparisonMode, selectedMonths?: string[]) => void
@@ -41,7 +40,6 @@ interface AccountingFiltersProps {
 export function AccountingFilters({
   className,
   onSearchChange,
-  onDateRangeChange,
   onRefresh,
   onToggleAllCategories,
   onComparisonModeChange,
@@ -96,7 +94,7 @@ export function AccountingFilters({
     if (open) {
       fetchTransactions()
     }
-  }, [open])
+  }, [open, fetchTransactions])
 
   const handleModeToggle = (checked: boolean) => {
     const newMode = checked ? 'month-to-average' : 'month-to-month'

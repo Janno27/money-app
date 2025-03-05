@@ -1,7 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { startOfMonth, endOfMonth, eachDayOfInterval, format, isSameMonth, isToday, isSameDay, parse, addDays, addWeeks, addMonths, addYears, isWithinInterval } from "date-fns"
+import { startOfMonth, endOfMonth, eachDayOfInterval, format, isSameMonth, isToday, isSameDay, parse, isWithinInterval } from "date-fns"
 import { fr } from "date-fns/locale"
 import { motion } from "framer-motion"
 import { CircleDollarSign, Wallet, CalendarPlus, Pencil, Trash2 } from "lucide-react"
@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button"
 import { AddTransactionDialog } from "@/components/transactions/add-transaction-dialog"
 import { AddEventDialog } from "./AddEventDialog"
 import { formatCurrency } from "@/lib/format"
-import { useState, useCallback, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { EditEventSheet } from "./EditEventSheet"
 import {
@@ -29,7 +29,7 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu"
-import { UpcomingEvents } from "./UpcomingEvents"
+import Image from "next/image"
 
 const daysOfWeek = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]
 
@@ -68,16 +68,10 @@ interface CalendarViewProps {
   transactions: Transaction[]
   onTransactionsChange?: () => void
   events: Event[]
-  onEventEdit?: (event: Event) => void
   onEventsChange?: () => void
 }
 
-// Étendre l'interface HTMLDivElement pour inclure animationFrameId
-interface ExtendedHTMLDivElement extends HTMLDivElement {
-  animationFrameId?: number;
-}
-
-export function CalendarView({ currentDate, transactions, onTransactionsChange, events, onEventEdit, onEventsChange }: CalendarViewProps) {
+export function CalendarView({ currentDate, transactions, onTransactionsChange, events, onEventsChange }: CalendarViewProps) {
   const [isAddExpenseDialogOpen, setIsAddExpenseDialogOpen] = useState(false)
   const [isAddIncomeDialogOpen, setIsAddIncomeDialogOpen] = useState(false)
   const [isAddEventDialogOpen, setIsAddEventDialogOpen] = useState(false)
@@ -115,23 +109,14 @@ export function CalendarView({ currentDate, transactions, onTransactionsChange, 
     )
   }
 
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('events')
         .select(`
-          id,
-          title,
-          description,
-          location,
-          start_date,
-          end_date,
-          start_time,
-          frequency,
-          created_by,
+          *,
           participants:event_participants(
-            user_id,
-            user:users!user_id(
+            user:users(
               id,
               name,
               avatar
@@ -145,18 +130,18 @@ export function CalendarView({ currentDate, transactions, onTransactionsChange, 
       }
 
       if (data) {
-        const formattedData = data.map(event => ({
+        data.map(event => ({
           ...event,
-          participants: event.participants.map((p: any) => ({
+          participants: event.participants.map((p: { user: unknown }) => ({
             user: p.user
           }))
-        })) as Event[]
+        }))
         onEventsChange?.()
       }
     } catch (error) {
       console.error('Error:', error)
     }
-  }
+  }, [supabase, onEventsChange])
 
   useEffect(() => {
     fetchEvents()
@@ -314,10 +299,12 @@ export function CalendarView({ currentDate, transactions, onTransactionsChange, 
                               title={participant.user.name}
                             >
                               {participant.user.avatar ? (
-                                <img
+                                <Image
                                   src={participant.user.avatar}
                                   alt={participant.user.name}
                                   className="h-5 w-5 rounded-full border-2 border-background"
+                                  width={20}
+                                  height={20}
                                 />
                               ) : (
                                 <div className="h-5 w-5 rounded-full bg-primary/10 border-2 border-background flex items-center justify-center text-[0.6rem] text-primary">

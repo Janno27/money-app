@@ -7,7 +7,6 @@ import { fr } from "date-fns/locale"
 import { Button } from "./button"
 import { Popover, PopoverContent, PopoverTrigger } from "./popover"
 import { cn } from "@/lib/utils"
-import { Calendar } from "@/components/ui/calendar"
 
 interface DatePickerProps {
   value?: Date
@@ -109,18 +108,57 @@ export function DatePicker({
             "border-opacity-40 hover:border-opacity-100",
             !value && "text-muted-foreground"
           )}
+          disabled={disabled}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
-          {value ? format(value, "PPP", { locale: fr }) : <span>Choisir une date</span>}
+          {value ? format(value, "PPP", { locale: fr }) : placeholder}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
-        <Calendar
-          mode="single"
-          selected={value}
-          onSelect={onChange}
-          initialFocus
-        />
+        <div className="p-3">
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={handlePrevMonth}
+              className="rounded-md p-1.5 hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <div className="font-semibold">
+              {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+            </div>
+            <button
+              type="button"
+              onClick={handleNextMonth}
+              className="rounded-md p-1.5 hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="mt-3 grid grid-cols-7 gap-1">
+            {daysOfWeek.map((day) => (
+              <div key={day} className="text-center text-xs font-medium text-muted-foreground">
+                {day}
+              </div>
+            ))}
+            {generateCalendarDays().map((dayInfo, index) => (
+              <button
+                key={index}
+                type="button"
+                onClick={() => handleDateSelect(dayInfo.date)}
+                className={cn(
+                  "inline-flex h-7 w-7 items-center justify-center rounded-md text-xs",
+                  dayInfo.isCurrentMonth ? "text-foreground" : "text-muted-foreground",
+                  isToday(dayInfo.date) && "bg-accent text-accent-foreground",
+                  isSelected(dayInfo.date) && "bg-primary text-primary-foreground",
+                  "hover:bg-accent hover:text-accent-foreground"
+                )}
+              >
+                {dayInfo.date.getDate()}
+              </button>
+            ))}
+          </div>
+        </div>
       </PopoverContent>
     </Popover>
   )

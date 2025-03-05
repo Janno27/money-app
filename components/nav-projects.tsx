@@ -3,11 +3,9 @@
 import * as React from "react"
 import {
   Folder,
-  Forward,
   MoreHorizontal,
   Trash2,
   Plus,
-  ChevronRight,
   ChevronDown,
   LucideIcon,
   SquareTerminal,
@@ -42,7 +40,7 @@ import {
   Zap,
   Award,
   Edit3,
-  Trash,
+  Trash2 as Trash2Icon,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import {
@@ -51,7 +49,6 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuGroup,
   DropdownMenuLabel,
   DropdownMenuRadioItem,
   DropdownMenuRadioGroup,
@@ -60,7 +57,6 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
@@ -164,7 +160,7 @@ export function NavProjects() {
       try {
         // Les icônes ne sont pas sérialisables, nous devons les reconstruire
         const parsedProjects = JSON.parse(savedProjects)
-        const projectsWithIcons = parsedProjects.map((project: any) => ({
+        const projectsWithIcons = parsedProjects.map((project: { id: string; name: string; iconName: string; color?: string; subprojects?: SubProject[] }) => ({
           ...project,
           icon: AVAILABLE_ICONS.find(i => i.name === project.iconName)?.icon || Folder
         }))

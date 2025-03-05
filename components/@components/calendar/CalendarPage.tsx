@@ -114,7 +114,7 @@ export function CalendarPage() {
       if (data) {
         const formattedData = data.map(event => ({
           ...event,
-          participants: event.participants.map((p: any) => ({
+          participants: event.participants.map((p: { user: unknown }) => ({
             user: p.user
           }))
         })) as Event[]

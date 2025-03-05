@@ -16,7 +16,7 @@ import {
   Header,
   Cell,
 } from "@tanstack/react-table"
-import { Table as TableIcon, ChevronDown, Search, Pencil, EyeOff, Eye, Trash2 } from "lucide-react"
+import { Table as TableIcon, ChevronDown, Search, Pencil, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -122,6 +122,9 @@ export function TransactionsTable({
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    filterFns: {
+      dateRange: () => true,
+    },
     initialState: {
       pagination: {
         pageSize: 8,

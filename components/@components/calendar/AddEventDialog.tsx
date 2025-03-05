@@ -34,12 +34,12 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { format } from "date-fns"
-import { fr } from "date-fns/locale"
-import { Badge } from "@/components/ui/badge"
 import { X } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
+import Image from "next/image"
+import { toast } from "@/components/ui/use-toast"
 
 interface User {
   id: string
@@ -77,7 +77,6 @@ export function AddEventDialog({
 }: AddEventDialogProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [users, setUsers] = useState<User[]>([])
-  const [selectedUsers, setSelectedUsers] = useState<User[]>([])
   const [selectedUser, setSelectedUser] = useState<string | undefined>(undefined)
   const [selectedParticipants, setSelectedParticipants] = useState<User[]>([])
   const supabase = createClientComponentClient()
@@ -158,27 +157,24 @@ export function AddEventDialog({
         if (participantsError) throw participantsError
       }
 
+      toast({
+        title: "Événement créé",
+        description: `L'événement "${values.title}" a été créé avec succès.`,
+      })
+
       form.reset()
       onOpenChange(false)
       if (onSuccess) onSuccess()
     } catch (error) {
       console.error('Error adding event:', error)
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la création de l'événement.",
+        variant: "destructive",
+      })
     } finally {
       setIsLoading(false)
     }
-  }
-
-  const handleUserSelect = (userId: string) => {
-    const user = users.find(u => u.id === userId)
-    if (user && !selectedUsers.some(u => u.id === userId)) {
-      setSelectedUsers([...selectedUsers, user])
-      form.setValue('participants', [...selectedUsers.map(u => u.id), userId])
-    }
-  }
-
-  const handleUserRemove = (userId: string) => {
-    setSelectedUsers(selectedUsers.filter(u => u.id !== userId))
-    form.setValue('participants', selectedUsers.filter(u => u.id !== userId).map(u => u.id))
   }
 
   return (
@@ -333,10 +329,12 @@ export function AddEventDialog({
                               }}
                             >
                               {participant.avatar ? (
-                                <img
+                                <Image
                                   src={participant.avatar}
                                   alt={participant.name}
                                   className="h-4 w-4 rounded-full object-cover flex-shrink-0"
+                                  width={16}
+                                  height={16}
                                 />
                               ) : (
                                 <div className="h-4 w-4 rounded-full bg-background flex items-center justify-center text-[0.5rem] flex-shrink-0">
@@ -362,10 +360,12 @@ export function AddEventDialog({
                             >
                               <div className="flex items-center gap-1.5 w-full">
                                 {user.avatar ? (
-                                  <img
+                                  <Image
                                     src={user.avatar}
                                     alt={user.name}
                                     className="h-4 w-4 rounded-full object-cover flex-shrink-0"
+                                    width={16}
+                                    height={16}
                                   />
                                 ) : (
                                   <div className="h-4 w-4 rounded-full bg-muted flex items-center justify-center text-[0.5rem] flex-shrink-0">

@@ -25,6 +25,7 @@ import {
   getSortedRowModel,
   ColumnFiltersState,
   getFilteredRowModel,
+  Row,
 } from "@tanstack/react-table"
 import { Card } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -38,8 +39,6 @@ interface AccountingGridViewProps {
     to: Date | null
   }
   isIncome: boolean
-  onSearchChange: (value: string) => void
-  onDateRangeChange: (range: { from: Date | null; to: Date | null }) => void
   comparisonMode: ComparisonMode
   selectedMonths: string[]
   className?: string
@@ -103,8 +102,6 @@ export const AccountingGridView = React.forwardRef<
   searchQuery, 
   dateRange, 
   isIncome,
-  onSearchChange,
-  onDateRangeChange,
   comparisonMode,
   selectedMonths,
   className
@@ -122,14 +119,6 @@ export const AccountingGridView = React.forwardRef<
   }>({ years: {}, months: {} })
   const cardRef = React.useRef<HTMLDivElement>(null)
   const supabase = createClientComponentClient()
-
-  const calculateShadow = () => {
-    return {
-      borderRadius: '12px',
-      border: '1px solid transparent',
-      position: 'relative' as const,
-    };
-  };
 
   const months = [
     "janvier", "février", "mars", "avril", "mai", "juin",
@@ -326,27 +315,14 @@ export const AccountingGridView = React.forwardRef<
     fetchData()
   }, [dateRange, searchQuery, isIncome])
 
-  // Initialiser les variables CSS au chargement
+  // Pour résoudre le problème du useEffect nettoyage ref
   React.useEffect(() => {
-    if (cardRef.current) {
-      const rect = cardRef.current.getBoundingClientRect();
-      // Initialiser avec la position centrale
-      const centerX = rect.width / 2;
-      const centerY = rect.height / 2;
-      
-      cardRef.current.style.setProperty('--mouse-x', `${centerX}px`);
-      cardRef.current.style.setProperty('--mouse-y', `${centerY}px`);
-      cardRef.current.style.setProperty('--gradient-direction', 'right');
-      cardRef.current.style.setProperty('--gradient-position', '50%');
-    }
-  }, [data]); // Recalculer quand les données changent
-
-  // Suivre le curseur partout dans la page
-  React.useEffect(() => {
+    const currentCardRef = cardRef.current;
+    
     const handleMouseMove = (e: MouseEvent) => {
-      if (!cardRef.current) return;
+      if (!currentCardRef) return;
       
-      const rect = cardRef.current.getBoundingClientRect();
+      const rect = currentCardRef.getBoundingClientRect();
       
       // Calculer la position relative du curseur par rapport au composant
       const x = e.clientX - rect.left;
@@ -391,7 +367,7 @@ export const AccountingGridView = React.forwardRef<
       const isNearEdge = minDist < 20 && !isOutside;
       
       // Mettre à jour les variables CSS
-      const targetElement = cardRef.current as ExtendedHTMLDivElement;
+      const targetElement = currentCardRef as ExtendedHTMLDivElement;
       
       // Annuler toute animation précédente
       if (targetElement.animationFrameId) {
@@ -429,8 +405,8 @@ export const AccountingGridView = React.forwardRef<
       document.removeEventListener('mousemove', handleMouseMove);
       
       // Annuler toute animation en cours
-      if (cardRef.current) {
-        const targetElement = cardRef.current as ExtendedHTMLDivElement;
+      if (currentCardRef) {
+        const targetElement = currentCardRef as ExtendedHTMLDivElement;
         if (targetElement.animationFrameId) {
           cancelAnimationFrame(targetElement.animationFrameId);
         }
@@ -492,7 +468,7 @@ export const AccountingGridView = React.forwardRef<
             )}
           </div>
         ),
-        cell: ({ row }: { row: any }) => {
+        cell: ({ row }: { row: Row<CategoryData> }) => {
           const category = row.original
           const total = category.years[year] || 0
           
@@ -515,7 +491,7 @@ export const AccountingGridView = React.forwardRef<
             <div className="text-[10px] text-muted-foreground/70">{year}</div>
           </div>
         ),
-        cell: ({ row }: { row: any }) => {
+        cell: ({ row }: { row: Row<CategoryData> }) => {
           const category = row.original
           const monthKey = `${year}-${month}`
           const value = category.months[monthKey] || 0
@@ -566,7 +542,7 @@ export const AccountingGridView = React.forwardRef<
     
     // Combiner toutes les colonnes
     return [categoryColumn, ...yearColumns, ...monthColumns]
-  }, [availableYears, expandedYears, expandedCategories, comparisonMode, selectedMonths, isIncome])
+  }, [availableYears, expandedYears, expandedCategories, comparisonMode, selectedMonths, isIncome, toggleCategory, toggleYear, months])
 
   // Créer la table
   const table = useReactTable({
@@ -601,7 +577,7 @@ export const AccountingGridView = React.forwardRef<
   }
 
   // Fonction pour générer les cellules de sous-catégorie pour une année spécifique
-  const renderSubcategoryMonthCells = (subcategory: any, year: number) => {
+  const renderSubcategoryMonthCells = (subcategory: CategoryData['subcategories'][0], year: number) => {
     if (!expandedYears.has(year)) return null
     
     return months.map(month => {
@@ -654,7 +630,6 @@ export const AccountingGridView = React.forwardRef<
   // Trouver l'année active
   const activeYear = Array.from(expandedYears)[0] || 0
   const activeYearIndex = availableYears.findIndex(year => year === activeYear)
-  const stickyColumnCount = activeYearIndex !== -1 ? activeYearIndex + 2 : 1
 
   return (
     <div style={{ height: '100%', paddingTop: '1rem', paddingBottom: '1rem' }} className={className}>
@@ -850,4 +825,6 @@ export const AccountingGridView = React.forwardRef<
       </div>
     </div>
   )
-}) 
+})
+
+AccountingGridView.displayName = "AccountingGridView" 

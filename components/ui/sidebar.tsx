@@ -318,8 +318,6 @@ export function SidebarInset({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
-  const { state } = useSidebar()
-
   return (
     <div
       className={cn(

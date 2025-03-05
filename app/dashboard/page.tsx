@@ -10,15 +10,13 @@ import { EvolutionSummary } from "@/components/@components/evolution/EvolutionSu
 import { EvolutionChart } from "@/components/@components/evolution/EvolutionChart"
 import { UpcomingEvents } from "@/components/@components/calendar/UpcomingEvents"
 import { NotesStack } from "@/components/@components/notes/NotesStack"
-import { Card } from "@/components/ui/card"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useEffect, useState } from "react"
 import { Note } from "@/components/@components/notes/types"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
-import { Plus, ArrowUpRight, ArrowDownRight, CircleDollarSign, Wallet, CreditCard, Receipt, ArrowRight, ExternalLink } from "lucide-react"
-import { v4 as uuidv4 } from 'uuid'
+import { Plus, CreditCard, Receipt, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { AddEventDialog } from "@/components/@components/calendar/AddEventDialog"
 import { AddTransactionDialog } from "@/components/transactions/add-transaction-dialog"
@@ -137,7 +135,7 @@ export default function DashboardPage() {
     fetchEvents()
     fetchNotes()
     fetchTransactions()
-  }, [])
+  }, [supabase])
 
   const handleUpdateNote = async (id: string, updates: Partial<Note>) => {
     const { data } = await supabase
@@ -323,7 +321,7 @@ export default function DashboardPage() {
                       className="text-slate-700 flex items-center gap-1 hover:gap-2 transition-all p-0 h-6"
                       onClick={() => router.push('/dashboard/evolution')}
                     >
-                      Accéder à l'évolution
+                      Accéder à l&apos;évolution
                       <ArrowRight className="h-4 w-4" />
                     </Button>
                   </div>

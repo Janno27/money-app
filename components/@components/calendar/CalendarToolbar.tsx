@@ -7,7 +7,6 @@ import { format, addMonths, subMonths } from "date-fns"
 import { fr } from "date-fns/locale"
 import { AddTransactionDialog } from "@/components/transactions/add-transaction-dialog"
 import { AddEventDialog } from "./AddEventDialog"
-import { cn } from "@/lib/utils"
 
 interface CalendarToolbarProps {
   currentDate: Date
@@ -99,7 +98,7 @@ export function CalendarToolbar({
             className="h-8 text-xs ml-2"
             onClick={handleToday}
           >
-            Aujourd'hui
+            Aujourd&apos;hui
           </Button>
         </div>
       </div>

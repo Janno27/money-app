@@ -31,8 +31,17 @@ export function ChartContainer({
   )
 }
 
-interface ChartTooltipContentProps extends TooltipProps<any, any> {
-  className?: string
+interface ChartTooltipContentProps {
+  active?: boolean;
+  payload?: Array<{
+    color: string;
+    name: string;
+    value: number;
+    [key: string]: any;
+  }>;
+  label?: string;
+  className?: string;
+  [key: string]: any;
 }
 
 export function ChartTooltipContent({
@@ -57,7 +66,7 @@ export function ChartTooltipContent({
       <div className="grid gap-2">
         <div className="font-medium">{label}</div>
         <div className="grid gap-1">
-          {payload.map((item: any, index: number) => (
+          {payload.map((item, index) => (
             <div key={index} className="flex items-center justify-between gap-2">
               <div
                 className="flex items-center gap-1"

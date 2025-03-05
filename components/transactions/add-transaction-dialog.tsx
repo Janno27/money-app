@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
-import { Calendar as CalendarIcon, ChevronDown } from "lucide-react"
+import { ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -35,19 +35,13 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
 import { Input } from "@/components/ui/input"
-import { Calendar } from "@/components/ui/calendar"
-import { cn } from "@/lib/utils"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Checkbox } from "@/components/ui/checkbox"
+import { toast } from "@/components/ui/use-toast"
 
 interface User {
   id: string
@@ -115,10 +109,9 @@ export function AddTransactionDialog({
       amount: "",
       category_id: "",
       subcategory_id: "",
-      expense_type: "individual",
-      split_ratio: 50,
       accounting_date: defaultDate || new Date(),
       transaction_date: defaultDate || new Date(),
+      is_couple: true,
     },
   })
 
@@ -237,11 +230,24 @@ export function AddTransactionDialog({
         throw new Error(transactionError.message)
       }
 
+      // Afficher un toast de confirmation
+      toast({
+        title: isIncome ? "Revenu ajouté" : "Dépense ajoutée",
+        description: `${isIncome ? "Le revenu" : "La dépense"} de ${values.amount}€ a été ajouté(e) avec succès.`,
+      })
+
       form.reset()
       onOpenChange(false)
       if (onSuccess) onSuccess()
     } catch (error) {
       console.error('Error adding transaction:', error)
+      // Afficher un toast d'erreur
+      toast({
+        title: "Erreur",
+        description: `Erreur lors de l'ajout de la transaction: ${error instanceof Error ? error.message : "Erreur inconnue"}`,
+        variant: "destructive",
+      })
+      
       if (error instanceof Error) {
         form.setError('root', {
           type: 'submit',

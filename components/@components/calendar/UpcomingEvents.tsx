@@ -6,6 +6,7 @@ import { fr } from "date-fns/locale"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Pencil } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import Image from "next/image"
 
 interface Event {
   id: string
@@ -148,10 +149,12 @@ export function UpcomingEvents({ events, onEventEdit, hideTitle }: UpcomingEvent
                 title={participant.user.name}
               >
                 {participant.user.avatar ? (
-                  <img
+                  <Image
                     src={participant.user.avatar}
                     alt={participant.user.name}
                     className="h-6 w-6 rounded-full border-2 border-background"
+                    width={24}
+                    height={24}
                   />
                 ) : (
                   <div className="h-6 w-6 rounded-full bg-primary/10 border-2 border-background flex items-center justify-center text-[0.65rem] text-primary font-medium">

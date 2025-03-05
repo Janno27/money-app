@@ -35,7 +35,6 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { Switch } from "@/components/ui/switch"
-import { cn } from "@/lib/utils"
 import { toast } from "@/components/ui/use-toast"
 import { Transaction } from "@/components/transactions/columns"
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
@@ -65,6 +64,18 @@ interface Subcategory {
   id: string
   name: string
   category_id: string
+}
+
+interface RefundWithUser {
+  id: string;
+  amount: number;
+  refund_date: string;
+  description: string | null;
+  transaction_id: string;
+  user_id: string;
+  user: {
+    name: string;
+  };
 }
 
 const formSchema = z.object({
@@ -107,7 +118,7 @@ export function EditTransactionDialog({
   })
 
   // Afficher les remboursements existants
-  const [existingRefunds, setExistingRefunds] = React.useState<any[]>([])
+  const [existingRefunds, setExistingRefunds] = React.useState<RefundWithUser[]>([])
 
   const watchCategoryId = form.watch("category_id")
   const watchIsRefund = form.watch("is_refund")
@@ -150,6 +161,7 @@ export function EditTransactionDialog({
 
   React.useEffect(() => {
     fetchData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   React.useEffect(() => {
@@ -169,6 +181,7 @@ export function EditTransactionDialog({
     }
 
     fetchRefunds()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transaction.id])
 
   const filteredSubcategories = subcategories.filter(

@@ -1,10 +1,10 @@
-import { SquareTerminal, Settings2 } from "lucide-react"
+import { SquareTerminal, Settings2, LucideIcon } from "lucide-react"
 
 // Définition du type pour les éléments de navigation
 export interface NavMainItem {
   title: string;
   url: string | null;
-  icon: any; // Utilisation de any pour éviter les problèmes de type avec les icônes
+  icon: LucideIcon; // Utilisation du type LucideIcon au lieu de any
   isActive?: boolean;
   items?: {
     title: string;

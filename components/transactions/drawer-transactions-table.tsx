@@ -11,7 +11,6 @@ import {
   getFilteredRowModel,
   ColumnFiltersState,
   FilterFn,
-  getPaginationRowModel,
 } from "@tanstack/react-table"
 import {
   Table,
@@ -25,7 +24,7 @@ import { Transaction, columns } from "./columns"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Search, ChevronDown, Pencil, Trash2, Plus } from "lucide-react"
+import { Search, ChevronDown, Pencil, Trash2 } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { EditTransactionDialog } from "./edit-transaction-dialog"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
@@ -38,12 +37,11 @@ import {
   ContextMenuSeparator,
 } from "@/components/ui/context-menu"
 import { MonthRangePicker } from "@/components/ui/month-range-picker"
-import { useState } from "react"
 import { AddTransactionDialog } from "./add-transaction-dialog"
 
 declare module '@tanstack/table-core' {
   interface FilterFns {
-    dateRange: FilterFn<any>
+    dateRange: FilterFn<Transaction>
   }
 }
 
@@ -65,10 +63,7 @@ export function DrawerTransactionsTable({
   const [editingTransaction, setEditingTransaction] = React.useState<Transaction | null>(null)
   const [isAddExpenseDialogOpen, setIsAddExpenseDialogOpen] = React.useState(false)
   const [isAddIncomeDialogOpen, setIsAddIncomeDialogOpen] = React.useState(false)
-  const [dateRange, setDateRange] = React.useState<{ from: Date | null; to: Date | null }>({
-    from: null,
-    to: null,
-  })
+  
   const supabase = createClientComponentClient()
 
   const filteredTransactions = React.useMemo(() => {
@@ -82,8 +77,36 @@ export function DrawerTransactionsTable({
   // Extraire les catégories uniques
   const categories = Array.from(new Set(transactions.map(t => t.category.name)))
 
+  // Filtrer les colonnes que nous voulons afficher
+  const filteredColumns = React.useMemo<ColumnDef<Transaction>[]>(() => {
+    return columns.filter(column => {
+      const columnId = 'id' in column ? column.id : 'accessorKey' in column ? column.accessorKey : undefined
+      return columnId && ['accounting_date', 'category', 'description', 'amount'].includes(columnId as string)
+    })
+  }, [])
+
+  const table = useReactTable({
+    data: filteredTransactions,
+    columns: filteredColumns,
+    getCoreRowModel: getCoreRowModel(),
+    onSortingChange: setSorting,
+    getSortedRowModel: getSortedRowModel(),
+    onColumnFiltersChange: setColumnFilters,
+    getFilteredRowModel: getFilteredRowModel(),
+    state: {
+      sorting,
+      columnFilters,
+    },
+    filterFns: {
+      dateRange: (row, id, value: [Date, Date]) => {
+        const cellValue = row.getValue(id) as string
+        const date = new Date(cellValue)
+        return date >= value[0] && date <= value[1]
+      },
+    },
+  })
+
   const handleDateRangeChange = (range: { from: Date; to: Date }) => {
-    setDateRange(range)
     if (range.from && range.to) {
       table.getColumn("accounting_date")?.setFilterValue([range.from, range.to])
     } else {
@@ -115,35 +138,6 @@ export function DrawerTransactionsTable({
       })
     }
   }
-
-  // Filtrer les colonnes que nous voulons afficher
-  const filteredColumns = React.useMemo<ColumnDef<Transaction>[]>(() => {
-    return columns.filter(column => {
-      const columnId = 'id' in column ? column.id : 'accessorKey' in column ? column.accessorKey : undefined
-      return columnId && ['accounting_date', 'category', 'description', 'amount'].includes(columnId as string)
-    })
-  }, [])
-
-  const table = useReactTable({
-    data: filteredTransactions,
-    columns: filteredColumns,
-    getCoreRowModel: getCoreRowModel(),
-    onSortingChange: setSorting,
-    getSortedRowModel: getSortedRowModel(),
-    onColumnFiltersChange: setColumnFilters,
-    getFilteredRowModel: getFilteredRowModel(),
-    state: {
-      sorting,
-      columnFilters,
-    },
-    filterFns: {
-      dateRange: (row, id, value: [Date, Date]) => {
-        const cellValue = row.getValue(id) as string
-        const date = new Date(cellValue)
-        return date >= value[0] && date <= value[1]
-      },
-    },
-  })
 
   return (
     <div className={cn("space-y-8 p-6", className)}>

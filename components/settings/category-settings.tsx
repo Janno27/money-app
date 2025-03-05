@@ -6,16 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Plus, Trash, Edit, ChevronRight, ChevronDown, Tag, FileText, AlertOctagon, AlertTriangle } from "lucide-react"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Plus, Trash, Edit, ChevronRight, ChevronDown, Tag, AlertOctagon, AlertTriangle } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -23,7 +15,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import {
   Select,
@@ -32,8 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
 import { toast } from "@/components/ui/use-toast"
 
 interface Category {
@@ -70,11 +59,6 @@ export function CategorySettings() {
   } | null>(null)
   
   const supabase = createClientComponentClient()
-
-  // Charger les catégories et sous-catégories
-  useEffect(() => {
-    fetchCategories()
-  }, [categoryType])
 
   const fetchCategories = async () => {
     setLoading(true)
@@ -116,6 +100,11 @@ export function CategorySettings() {
     }
   }
 
+  // Charger les catégories et sous-catégories
+  useEffect(() => {
+    fetchCategories()
+  }, [categoryType])
+
   const toggleCategory = (categoryId: string) => {
     const newExpanded = new Set(expandedCategories)
     if (newExpanded.has(categoryId)) {
@@ -146,13 +135,12 @@ export function CategorySettings() {
     if (!newCategoryName.trim()) return
 
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('categories')
         .insert([{ 
           name: newCategoryName.trim(), 
           type: categoryType 
         }])
-        .select()
 
       if (error) throw error
 
@@ -243,7 +231,7 @@ export function CategorySettings() {
       console.error('Error deleting:', error)
       toast({
         title: "Erreur de suppression",
-        description: "Une erreur s'est produite lors de la suppression.",
+        description: 'Une erreur s&apos;est produite lors de la suppression.',
         variant: "destructive",
       })
     }
@@ -565,7 +553,7 @@ export function CategorySettings() {
                     La suppression de {deleteItemInfo.isCategory ? "la catégorie" : "la sous-catégorie"} <strong>{deleteItemInfo.name}</strong> affectera <strong>{deleteItemInfo.transactionCount}</strong> transaction{deleteItemInfo.transactionCount > 1 ? "s" : ""}.
                   </div>
                   <div>
-                    Ces transactions resteront dans votre compte mais n'auront plus de {deleteItemInfo.isCategory ? "catégorie" : "sous-catégorie"} associée.
+                    Ces transactions resteront dans votre compte mais n&apos;auront plus de {deleteItemInfo.isCategory ? "catégorie" : "sous-catégorie"} associée.
                   </div>
                 </div>
               ) : (

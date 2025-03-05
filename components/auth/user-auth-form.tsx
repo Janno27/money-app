@@ -3,22 +3,17 @@
 import * as React from "react"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { useRouter } from "next/navigation"
+import { Loader2 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Icons } from "@/components/ui/icons"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
 
-interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {}
+// Cette interface étend les propriétés HTML div sans ajouter de propriétés supplémentaires
+interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {
+  // Aucune propriété spécifique supplémentaire n'est nécessaire
+}
 
 export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
   const [isLoading, setIsLoading] = React.useState<boolean>(false)
@@ -45,8 +40,8 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
 
       router.refresh()
       router.push("/")
-    } catch (error: any) {
-      setError(error.message)
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Une erreur est survenue")
     } finally {
       setIsLoading(false)
     }
@@ -87,7 +82,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
           )}
           <Button disabled={isLoading}>
             {isLoading && (
-              <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             )}
             Se connecter
           </Button>
