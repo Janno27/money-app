@@ -29,7 +29,6 @@ export class DemoDataGenerator {
       
       // Insérer les données dans la base de données
       await this.insertTransactions(results.transactions);
-      await this.insertRefunds(results.refunds);
       
       return true;
     } catch (error) {
@@ -127,7 +126,6 @@ export class DemoDataGenerator {
     }
 
     const transactions: GeneratedTransaction[] = [];
-    const refunds: GeneratedRefund[] = [];
     
     // Toujours générer les revenus réguliers en premier
     this.generateRevenusReguliers(transactions);
@@ -142,11 +140,10 @@ export class DemoDataGenerator {
     this.generateDepensesEssentielles(transactions);
     
     // Générer les autres dépenses variables
-    this.generateExpenseTransactions(transactions, refunds);
+    this.generateExpenseTransactions(transactions);
 
     return {
-      transactions,
-      refunds
+      transactions
     };
   }
 
@@ -166,17 +163,56 @@ export class DemoDataGenerator {
     
     // Pour chaque modèle de revenu régulier
     regularIncomes.forEach(pattern => {
-      const categoryInfo = this.findMatchingCategory(categoryMap, pattern.category);
+      // Rechercher une catégorie "Revenus" ou similaire
+      let categoryInfo = null;
+      for (const [catName, catInfo] of categoryMap.entries()) {
+        if (catName.toLowerCase().includes('revenu') || catName.toLowerCase() === 'revenus') {
+          categoryInfo = catInfo;
+          break;
+        }
+      }
+      
       if (!categoryInfo) {
-        console.log(`Catégorie non trouvée pour le revenu: ${pattern.name} (${pattern.category})`);
+        console.log(`Catégorie de revenus non trouvée pour: ${pattern.name}`);
         return;
       }
       
       const categoryId = categoryInfo.id;
-      const subcategoryId = this.findMatchingSubcategory(categoryInfo.subcategories, pattern.subcategory);
+      
+      // Trouver la sous-catégorie appropriée (Salaire ou Coverflex)
+      let subcategoryId = null;
+      const subcategoriesMap = categoryInfo.subcategories;
+      
+      // Si c'est un salaire, rechercher une sous-catégorie "Salaire" ou similaire
+      if (pattern.name.toLowerCase().includes('salaire')) {
+        for (const [subName, subId] of subcategoriesMap.entries()) {
+          if (subName.toLowerCase().includes('salaire')) {
+            subcategoryId = subId;
+            break;
+          }
+        }
+      } 
+      // Si c'est Coverflex ou un avantage, rechercher une sous-catégorie appropriée
+      else if (pattern.name.toLowerCase().includes('coverflex') || pattern.subcategory === 'Avantages') {
+        for (const [subName, subId] of subcategoriesMap.entries()) {
+          if (subName.toLowerCase().includes('avantage') || 
+              subName.toLowerCase().includes('prime') || 
+              subName.toLowerCase().includes('coverflex')) {
+            subcategoryId = subId;
+            break;
+          }
+        }
+      }
+      
+      // Si toujours pas de sous-catégorie, utiliser la première disponible
+      if (!subcategoryId && subcategoriesMap.size > 0) {
+        subcategoryId = subcategoriesMap.values().next().value;
+        console.log(`Utilisation de la sous-catégorie par défaut pour: ${pattern.name}`);
+      }
       
       if (!subcategoryId) {
-        console.log(`Sous-catégorie non trouvée pour le revenu: ${pattern.name} (${pattern.subcategory})`);
+        console.log(`Sous-catégorie non trouvée pour le revenu: ${pattern.name}`);
+        return; // Sautons cette transaction si on ne peut pas trouver de sous-catégorie
       }
       
       // Pour les salaires, assigner à un utilisateur spécifique (alterner si multiples utilisateurs)
@@ -629,8 +665,7 @@ export class DemoDataGenerator {
 
   // Générer les transactions de dépenses
   private generateExpenseTransactions(
-    transactions: GeneratedTransaction[], 
-    refunds: GeneratedRefund[]
+    transactions: GeneratedTransaction[]
   ): void {
     if (!this.config) return;
     
@@ -688,9 +723,6 @@ export class DemoDataGenerator {
         );
       }
     });
-    
-    // Générer des remboursements pour certaines transactions
-    this.generateRefunds(transactions, refunds);
   }
 
   // Générer des transactions mensuelles
@@ -1078,58 +1110,6 @@ export class DemoDataGenerator {
     }
   }
 
-  // Générer des remboursements pour certaines transactions
-  private generateRefunds(
-    transactions: GeneratedTransaction[],
-    refunds: GeneratedRefund[]
-  ): void {
-    if (!this.config) return;
-
-    const { users, organization_id } = this.config;
-    
-    // Parcourir les transactions de dépenses
-    transactions.filter(t => !t.is_income).forEach((transaction, index) => {
-      // Associer un ID temporaire pour référencer cette transaction
-      this.transactionIds.push(`temp-${index}`);
-      
-      // Trouver le pattern correspondant à cette transaction
-      const pattern = EXPENSE_PATTERNS.find(p => 
-        p.description === transaction.description || 
-        p.name === transaction.description
-      );
-      
-      if (pattern?.refundProbability && Math.random() <= pattern.refundProbability) {
-        // Déterminer un montant de remboursement (partie de la transaction)
-        const refundRatio = Math.random() * 0.5 + 0.3; // Entre 30% et 80% de remboursement
-        const refundAmount = Math.round(transaction.amount * refundRatio * 100) / 100;
-        
-        // Déterminer une date de remboursement (quelques jours après la transaction)
-        const transactionDate = new Date(transaction.transaction_date);
-        const daysToAdd = Math.floor(Math.random() * 7) + 3; // 3-10 jours après
-        const refundDate = addDays(transactionDate, daysToAdd);
-        
-        // Vérifier si la date de remboursement est encore dans la plage valide
-        if (refundDate <= this.config.endDate) {
-          // Déterminer l'utilisateur qui rembourse (différent de celui qui a fait la dépense)
-          const otherUsers = users.filter(u => u.id !== transaction.user_id);
-          const refundUserId = otherUsers.length > 0 ? 
-            otherUsers[Math.floor(Math.random() * otherUsers.length)].id : 
-            transaction.user_id;
-          
-          // Créer le remboursement
-          refunds.push({
-            transaction_id: `temp-${index}`, // Référence temporaire
-            amount: refundAmount,
-            refund_date: format(refundDate, 'yyyy-MM-dd'),
-            description: `Remboursement: ${transaction.description}`,
-            user_id: refundUserId,
-            organization_id
-          });
-        }
-      }
-    });
-  }
-
   // Insérer les transactions dans la base de données
   private async insertTransactions(transactions: GeneratedTransaction[]): Promise<void> {
     if (transactions.length === 0) return;
@@ -1140,59 +1120,17 @@ export class DemoDataGenerator {
       for (let i = 0; i < transactions.length; i += batchSize) {
         const batch = transactions.slice(i, i + batchSize);
         
-        const { data, error } = await this.supabase
+        const { error } = await this.supabase
           .from('transactions')
-          .insert(batch)
-          .select('id');
+          .insert(batch);
         
         if (error) {
           console.error("Erreur lors de l'insertion des transactions:", error);
           throw error;
         }
-        
-        // Stocker les IDs réels des transactions pour les remboursements
-        if (data) {
-          data.forEach((item, index) => {
-            this.transactionIds[i + index] = item.id;
-          });
-        }
       }
     } catch (error) {
       console.error("Erreur lors de l'insertion des transactions:", error);
-      throw error;
-    }
-  }
-
-  // Insérer les remboursements dans la base de données
-  private async insertRefunds(refunds: GeneratedRefund[]): Promise<void> {
-    if (refunds.length === 0) return;
-    
-    try {
-      // Remplacer les références temporaires par les IDs réels
-      const refsWithValidIds = refunds.map(refund => {
-        const tempIndex = parseInt(refund.transaction_id.replace('temp-', ''));
-        return {
-          ...refund,
-          transaction_id: this.transactionIds[tempIndex]
-        };
-      });
-      
-      // Insérer les remboursements par lots de 20 pour éviter les limites de taille de requête
-      const batchSize = 20;
-      for (let i = 0; i < refsWithValidIds.length; i += batchSize) {
-        const batch = refsWithValidIds.slice(i, i + batchSize);
-        
-        const { error } = await this.supabase
-          .from('refunds')
-          .insert(batch);
-        
-        if (error) {
-          console.error("Erreur lors de l'insertion des remboursements:", error);
-          throw error;
-        }
-      }
-    } catch (error) {
-      console.error("Erreur lors de l'insertion des remboursements:", error);
       throw error;
     }
   }

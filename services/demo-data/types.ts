@@ -109,5 +109,4 @@ export interface GenerationConfig {
 // Résultats de la génération
 export interface GenerationResults {
   transactions: GeneratedTransaction[];
-  refunds: GeneratedRefund[];
 } 
