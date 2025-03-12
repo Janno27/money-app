@@ -135,6 +135,9 @@ export class DemoDataGenerator {
     // Générer les revenus exceptionnels
     this.generateRevenusExceptionnels(transactions);
     
+    // Générer tous les revenus (garantie complète)
+    this.generateIncomeTransactions(transactions);
+    
     // Générer les dépenses essentielles (garanties chaque mois)
     this.generateDepensesEssentielles(transactions);
     
@@ -155,20 +158,32 @@ export class DemoDataGenerator {
     
     // Filtrer uniquement les revenus réguliers (salaires et avantages mensuels)
     const regularIncomes = INCOME_PATTERNS.filter(pattern => 
-      pattern.frequency === 'monthly' && ['Salaire', 'Avantages'].includes(pattern.subcategory)
+      pattern.frequency === 'monthly' && 
+      (pattern.subcategory === 'Salaire' || pattern.subcategory === 'Avantages')
     );
+    
+    console.log(`Nombre de revenus réguliers trouvés: ${regularIncomes.length}`);
     
     // Pour chaque modèle de revenu régulier
     regularIncomes.forEach(pattern => {
-      const categoryInfo = categoryMap.get(pattern.category);
-      if (!categoryInfo) return;
+      const categoryInfo = this.findMatchingCategory(categoryMap, pattern.category);
+      if (!categoryInfo) {
+        console.log(`Catégorie non trouvée pour le revenu: ${pattern.name} (${pattern.category})`);
+        return;
+      }
       
       const categoryId = categoryInfo.id;
-      const subcategoryId = categoryInfo.subcategories.get(pattern.subcategory) || null;
+      const subcategoryId = this.findMatchingSubcategory(categoryInfo.subcategories, pattern.subcategory);
+      
+      if (!subcategoryId) {
+        console.log(`Sous-catégorie non trouvée pour le revenu: ${pattern.name} (${pattern.subcategory})`);
+      }
       
       // Pour les salaires, assigner à un utilisateur spécifique (alterner si multiples utilisateurs)
       const userId = pattern.name === "Salaire principal" ? users[0].id : 
                     (pattern.name === "Salaire secondaire" && users.length > 1 ? users[1].id : users[0].id);
+      
+      console.log(`Génération du revenu régulier: ${pattern.name} pour l'utilisateur: ${userId}`);
       
       // Pour chaque mois entre startDate et endDate
       let currentDate = new Date(startDate);
@@ -195,6 +210,8 @@ export class DemoDataGenerator {
             is_income: true,
             organization_id: organization_id
           });
+          
+          console.log(`Transaction de revenu créée: ${amount}€ le ${format(transactionDate, 'yyyy-MM-dd')}`);
         }
         
         // Passer au mois suivant
