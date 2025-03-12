@@ -2,7 +2,7 @@
 
 import { AppSidebar } from "@/components/app-sidebar"
 import { Breadcrumb } from "@/components/ui/breadcrumb"
-import { AccountingPage } from "@/components/@components/AccountingPage"
+import { AccountingPage } from "@/components/@components/accounting/AccountingPage"
 import {
   SidebarInset,
   SidebarProvider,

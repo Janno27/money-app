@@ -1,18 +1,20 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { ArrowLeft } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Switch } from "@/components/ui/switch"
+import { EvolutionSummary } from "@/components/@components/evolution/EvolutionSummary"
+import { EvolutionChart } from "@/components/@components/evolution/EvolutionChart"
+import { EvolutionDistribution } from "@/components/@components/evolution/EvolutionDistribution"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
-import { EvolutionChart } from "./EvolutionChart"
-import { EvolutionSummary } from "./EvolutionSummary"
-import { EvolutionDistribution } from "./EvolutionDistribution"
-import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
+import { ArrowLeft } from "lucide-react"
 
 interface MonthlyData {
   month: string
@@ -137,27 +139,21 @@ export default function EvolutionPage() {
             {/* Conteneur avec hauteur fixe pour les graphiques */}
             <div className="flex-1 overflow-hidden px-6 min-h-0 mb-6" style={{ maxHeight: "calc(100vh - 350px)" }}>
               <div className="flex h-full gap-6">
-                {/* Graphique d'évolution - largeur 60%, hauteur fixe */}
                 <div className="w-[60%] flex flex-col h-full">
                   <div className="flex-none pt-6 pb-2">
                     <div className="space-y-1">
-                      <h3 className="font-semibold">Évolution annuelle</h3>
+                      <h3 className="font-semibold">Évolution Financière</h3>
                       <p className="text-sm text-muted-foreground">
-                        Évolution des dépenses et revenus pour l'année {new Date().getFullYear()}
+                        Vue détaillée de vos finances sur l'année {selectedYear}
                       </p>
                     </div>
                   </div>
-                  {/* Conteneur fixe pour le graphique */}
-                  <div className="flex-1 overflow-hidden">
-                    <EvolutionChart 
-                      data={data} 
-                      isLoading={isLoading}
-                      comparisonData={comparisonData}
-                    />
+                  {/* Conteneur fixe pour les graphiques */}
+                  <div className="flex-1 h-full">
+                    <EvolutionChart data={data} isLoading={isLoading} />
                   </div>
                 </div>
-
-                {/* Distribution - largeur 40%, hauteur fixe */}
+                
                 <div className="w-[40%] flex flex-col h-full">
                   <div className="flex-none pt-6 pb-2">
                     <div className="space-y-1">

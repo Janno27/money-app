@@ -98,7 +98,7 @@ export function CalendarPage() {
           created_by,
           participants:event_participants(
             user_id,
-            user:users!user_id(
+            user:users(
               id,
               name,
               avatar

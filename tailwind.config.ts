@@ -65,7 +65,26 @@ export default {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
-  		}
+  		},
+        keyframes: {
+          firework: {
+            '0%': { 
+              transform: 'translate(-50%, -50%) scale(0)',
+              opacity: '1'
+            },
+            '50%': { 
+              transform: 'translate(-50%, -50%) scale(1)',
+              opacity: '0.8'
+            },
+            '100%': { 
+              transform: 'translate(-50%, -50%) scale(1.5)',
+              opacity: '0'
+            }
+          }
+        },
+        animation: {
+          firework: 'firework 1.5s ease-out forwards'
+        }
   	}
   },
   plugins: [require("tailwindcss-animate")],

@@ -1,4 +1,4 @@
-import { SquareTerminal, Settings2, Calendar, LucideIcon } from "lucide-react"
+import { SquareTerminal, Settings2, Calendar, LucideIcon, BarChart4 } from "lucide-react"
 
 // Définition du type pour les éléments de navigation
 export interface NavMainItem {
@@ -36,6 +36,11 @@ export const data = {
       title: "Calendrier",
       url: "/dashboard/calendar",
       icon: Calendar,
+    },
+    {
+      title: "Planifié",
+      url: "/dashboard/planner",
+      icon: BarChart4,
     },
     {
       title: "Settings",

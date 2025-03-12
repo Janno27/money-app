@@ -1,0 +1,344 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { toast } from "@/components/ui/use-toast"
+import { Loader2, CheckCircle2, XCircle } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+
+export default function JoinPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const supabase = createClientComponentClient()
+  
+  const [loading, setLoading] = useState(true)
+  const [joining, setJoining] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [name, setName] = useState("")
+  const [organization, setOrganization] = useState<{ id: string, name: string } | null>(null)
+  
+  useEffect(() => {
+    const init = async () => {
+      setLoading(true)
+      
+      try {
+        // Récupérer les paramètres du lien d'invitation
+        const emailParam = searchParams.get('email')
+        const organizationId = searchParams.get('organization')
+        const invitationCode = searchParams.get('code')
+        
+        if (!emailParam || !organizationId || !invitationCode) {
+          setError("Lien d'invitation invalide.")
+          return
+        }
+        
+        setEmail(emailParam)
+        
+        // Récupérer les détails de l'organisation
+        const { data: orgData, error: orgError } = await supabase
+          .from('organizations')
+          .select('id, name')
+          .eq('id', organizationId)
+          .single()
+        
+        if (orgError) {
+          setError("Organisation introuvable.")
+          return
+        }
+        
+        setOrganization(orgData)
+        
+        // Vérifier si l'utilisateur est déjà connecté
+        const { data: { user } } = await supabase.auth.getUser()
+        
+        if (user) {
+          // Si l'utilisateur est déjà connecté, vérifier si son email correspond à l'invitation
+          if (user.email === emailParam) {
+            // Ajouter directement l'utilisateur à l'organisation
+            await joinOrganization(user.id, organizationId)
+          } else {
+            // L'utilisateur est connecté avec un compte différent
+            setError(`Vous êtes connecté avec un compte différent (${user.email}). Veuillez vous déconnecter et réessayer avec ${emailParam}.`)
+          }
+        }
+        
+      } catch (err) {
+        console.error("Erreur lors de l'initialisation:", err)
+        setError("Une erreur est survenue. Veuillez réessayer.")
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    init()
+  }, [searchParams, supabase, router])
+  
+  const joinOrganization = async (userId: string, organizationId: string) => {
+    try {
+      // Vérifier si l'utilisateur est déjà membre
+      const { data: existingMember } = await supabase
+        .from('organization_members')
+        .select('user_id')
+        .eq('organization_id', organizationId)
+        .eq('user_id', userId)
+        .single()
+        
+      if (existingMember) {
+        setSuccess(true)
+        toast({
+          title: "Déjà membre",
+          description: `Vous êtes déjà membre de ${organization?.name}.`
+        })
+        
+        setTimeout(() => {
+          router.push('/dashboard')
+        }, 2000)
+        
+        return
+      }
+      
+      // Ajouter l'utilisateur à l'organisation
+      const { error: addError } = await supabase
+        .from('organization_members')
+        .insert({
+          organization_id: organizationId,
+          user_id: userId,
+          role: 'member'
+        })
+      
+      if (addError) throw addError
+      
+      // Mettre à jour l'organization_id de l'utilisateur si nécessaire
+      await supabase
+        .from('users')
+        .update({ organization_id: organizationId })
+        .eq('id', userId)
+      
+      setSuccess(true)
+      
+      toast({
+        title: "Invitation acceptée",
+        description: `Vous avez rejoint ${organization?.name}.`
+      })
+      
+      // Rediriger après 2 secondes
+      setTimeout(() => {
+        router.push('/dashboard')
+      }, 2000)
+      
+    } catch (err) {
+      console.error("Erreur lors de l'ajout à l'organisation:", err)
+      setError("Une erreur est survenue lors de l'acceptation de l'invitation.")
+    }
+  }
+  
+  const handleSignUpAndJoin = async () => {
+    if (!organization || !email || !password) return
+    
+    setJoining(true)
+    
+    try {
+      // Créer un nouveau compte
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            organization_id: organization.id
+          }
+        }
+      })
+      
+      if (signUpError) throw signUpError
+      
+      if (signUpData.user) {
+        // Ajouter l'utilisateur à l'organisation
+        await joinOrganization(signUpData.user.id, organization.id)
+      } else {
+        // Si email_confirmation est activé, l'utilisateur sera null
+        toast({
+          title: "Inscription en cours",
+          description: "Veuillez vérifier votre email pour confirmer votre inscription. Vous rejoindrez automatiquement l'organisation après confirmation."
+        })
+        
+        setSuccess(true)
+      }
+      
+    } catch (err) {
+      console.error("Erreur lors de l'inscription:", err)
+      setError("Une erreur est survenue lors de l'inscription.")
+    } finally {
+      setJoining(false)
+    }
+  }
+  
+  const handleSignInAndJoin = async () => {
+    if (!organization || !email || !password) return
+    
+    setJoining(true)
+    
+    try {
+      // Se connecter avec un compte existant
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      })
+      
+      if (signInError) throw signInError
+      
+      if (signInData.user) {
+        // Ajouter l'utilisateur à l'organisation
+        await joinOrganization(signInData.user.id, organization.id)
+      }
+      
+    } catch (err) {
+      console.error("Erreur lors de la connexion:", err)
+      setError("Email ou mot de passe incorrect.")
+    } finally {
+      setJoining(false)
+    }
+  }
+  
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>Invitation</CardTitle>
+            <CardDescription>Vérification de votre invitation...</CardDescription>
+          </CardHeader>
+          <CardContent className="flex justify-center py-8">
+            <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+  
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-4">
+        <Card className="w-full max-w-md border-destructive">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <XCircle className="h-5 w-5 text-destructive" />
+              Erreur
+            </CardTitle>
+            <CardDescription>Impossible de traiter l'invitation</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">{error}</p>
+          </CardContent>
+          <CardFooter>
+            <Button onClick={() => router.push('/')} variant="outline" className="w-full">
+              Retour à l'accueil
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    )
+  }
+  
+  if (success) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-4">
+        <Card className="w-full max-w-md border-green-500">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-green-500" />
+              Invitation acceptée
+            </CardTitle>
+            <CardDescription>Vous avez rejoint l'organisation avec succès</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Vous êtes maintenant membre de <span className="font-semibold">{organization?.name}</span>.
+              Vous allez être redirigé vers le tableau de bord.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+  
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Rejoindre {organization?.name}</CardTitle>
+          <CardDescription>Vous avez été invité à rejoindre cette organisation</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              readOnly
+              className="bg-muted"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="name">Nom complet</Label>
+            <Input
+              id="name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Votre nom"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="password">Mot de passe</Label>
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Votre mot de passe"
+            />
+          </div>
+        </CardContent>
+        <CardFooter className="flex flex-col gap-2">
+          <Button 
+            onClick={handleSignUpAndJoin} 
+            className="w-full"
+            disabled={joining || !email || !password || !name}
+          >
+            {joining ? (
+              <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Création du compte...</>
+            ) : (
+              "Créer un compte et rejoindre"
+            )}
+          </Button>
+          
+          <div className="text-sm text-center w-full my-2">ou</div>
+          
+          <Button 
+            onClick={handleSignInAndJoin}
+            variant="outline"
+            className="w-full"
+            disabled={joining || !email || !password}
+          >
+            {joining ? (
+              <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Connexion...</>
+            ) : (
+              "Se connecter et rejoindre"
+            )}
+          </Button>
+        </CardFooter>
+      </Card>
+    </div>
+  )
+} 

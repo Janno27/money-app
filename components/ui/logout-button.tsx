@@ -1,28 +1,28 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { useRouter } from 'next/navigation'
-import { LogOut } from 'lucide-react'
+import { LogOut } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { signOut } from "@/lib/supabase/client"
 
-export function LogoutButton() {
+interface LogoutButtonProps {
+  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link"
+  size?: "default" | "sm" | "lg" | "icon"
+  className?: string
+}
+
+export function LogoutButton({ variant = "ghost", size = "icon", className }: LogoutButtonProps) {
   const router = useRouter()
-  const supabase = createClientComponentClient()
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
+    await signOut()
     router.refresh()
     router.push('/login')
   }
 
   return (
-    <Button 
-      variant="ghost" 
-      className="w-full justify-start" 
-      onClick={handleLogout}
-    >
-      <LogOut className="mr-2 h-4 w-4" />
-      <span>Déconnexion</span>
+    <Button variant={variant} size={size} onClick={handleLogout} className={className}>
+      <LogOut className="h-4 w-4" />
     </Button>
   )
 } 

@@ -39,7 +39,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
       if (error) throw error
 
       router.refresh()
-      router.push("/")
+      router.push("/onboarding")
     } catch (error) {
       setError(error instanceof Error ? error.message : "Une erreur est survenue")
     } finally {

@@ -29,6 +29,7 @@ interface Category {
   id: string
   name: string
   type: 'income' | 'expense' | 'fixed_expense'
+  organization_id?: string | null
   subcategories?: Subcategory[]
 }
 
@@ -36,6 +37,7 @@ interface Subcategory {
   id: string
   name: string
   category_id: string
+  organization_id?: string | null
 }
 
 export function CategorySettings() {
@@ -279,6 +281,7 @@ export function CategorySettings() {
 
   const renderCategoryItem = (category: Category) => {
     const isExpanded = expandedCategories.has(category.id)
+    const isSystemCategory = category.organization_id === null
 
     return (
       <div key={category.id} className="mb-2">
@@ -292,59 +295,84 @@ export function CategorySettings() {
             <Tag className="h-3.5 w-3.5 text-muted-foreground" />
             <span className="text-sm">{category.name}</span>
           </div>
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <button
-              className="text-muted-foreground hover:text-foreground p-1 rounded-sm"
-              onClick={(e) => {
-                e.stopPropagation()
-                setEditingCategory(category)
-              }}
-            >
-              <Edit className="h-3 w-3" />
-            </button>
-            <button
-              className="text-muted-foreground hover:text-destructive p-1 rounded-sm"
-              onClick={(e) => {
-                e.stopPropagation()
-                confirmDeleteCategory(category.id, category.name)
-              }}
-            >
-              <Trash className="h-3 w-3" />
-            </button>
-          </div>
+          {!isSystemCategory && (
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              <button
+                className="text-muted-foreground hover:text-foreground p-1 rounded-sm"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setEditingCategory(category)
+                }}
+              >
+                <Edit className="h-3 w-3" />
+              </button>
+              <button
+                className="text-muted-foreground hover:text-destructive p-1 rounded-sm"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  confirmDeleteCategory(category.id, category.name)
+                }}
+              >
+                <Trash className="h-3 w-3" />
+              </button>
+            </div>
+          )}
         </div>
         
         {isExpanded && category.subcategories && category.subcategories.length > 0 && (
           <div className="ml-5 mt-1 space-y-1">
-            {category.subcategories.map((subcategory) => (
-              <div key={subcategory.id} className="flex items-center justify-between py-1 hover:bg-muted/50 rounded-sm pl-4 pr-1 group">
-                <span className="text-xs text-muted-foreground">{subcategory.name}</span>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <button
-                    className="text-muted-foreground hover:text-foreground p-1 rounded-sm"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setEditingSubcategory(subcategory)
-                    }}
-                  >
-                    <Edit className="h-2.5 w-2.5" />
-                  </button>
-                  <button
-                    className="text-muted-foreground hover:text-destructive p-1 rounded-sm"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      confirmDeleteSubcategory(subcategory.id, subcategory.name)
-                    }}
-                  >
-                    <Trash className="h-2.5 w-2.5" />
-                  </button>
+            {category.subcategories.map((subcategory) => {
+              const isSystemSubcategory = subcategory.organization_id === null;
+              return (
+                <div key={subcategory.id} className="flex items-center justify-between py-1 hover:bg-muted/50 rounded-sm pl-4 pr-1 group">
+                  <span className="text-xs text-muted-foreground">
+                    {subcategory.name}
+                  </span>
+                  {!isSystemSubcategory && (
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <button
+                        className="text-muted-foreground hover:text-foreground p-1 rounded-sm"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setEditingSubcategory(subcategory)
+                        }}
+                      >
+                        <Edit className="h-2.5 w-2.5" />
+                      </button>
+                      <button
+                        className="text-muted-foreground hover:text-destructive p-1 rounded-sm"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          confirmDeleteSubcategory(subcategory.id, subcategory.name)
+                        }}
+                      >
+                        <Trash className="h-2.5 w-2.5" />
+                      </button>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
     )
+  }
+
+  // Fonction pour grouper les catégories par type (système et personnalisées)
+  const groupCategoriesByType = () => {
+    const systemCategories: Category[] = [];
+    const userCategories: Category[] = [];
+
+    categories.forEach(category => {
+      if (category.organization_id === null) {
+        systemCategories.push(category);
+      } else {
+        userCategories.push(category);
+      }
+    });
+
+    return { systemCategories, userCategories };
   }
 
   return (
@@ -405,7 +433,29 @@ export function CategorySettings() {
                 </button>
               </div>
             ) : (
-              categories.map(renderCategoryItem)
+              <div className="space-y-4">
+                {(() => {
+                  const { systemCategories, userCategories } = groupCategoriesByType();
+                  
+                  return (
+                    <>
+                      {systemCategories.length > 0 && (
+                        <div className="space-y-1">
+                          <h4 className="font-medium text-sm text-muted-foreground mb-2">Catégories système</h4>
+                          {systemCategories.map(renderCategoryItem)}
+                        </div>
+                      )}
+                      
+                      {userCategories.length > 0 && (
+                        <div className="space-y-1 mt-4">
+                          <h4 className="font-medium text-sm text-muted-foreground mb-2">Catégories personnalisées</h4>
+                          {userCategories.map(renderCategoryItem)}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
             )}
           </div>
         )}

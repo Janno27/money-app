@@ -116,26 +116,86 @@ export function DrawerTransactionsTable({
 
   const handleDeleteTransaction = async (transaction: Transaction) => {
     try {
+      // Vérifier que l'ID existe avant de tenter la suppression
+      if (!transaction.id) {
+        throw new Error("ID de transaction manquant");
+      }
+
+      // 1. D'abord récupérer les remboursements associés à cette transaction
+      const { data: refunds, error: refundsError } = await supabase
+        .from('refunds')
+        .select('id')
+        .eq('transaction_id', transaction.id);
+
+      if (refundsError) {
+        console.error(`Erreur lors de la récupération des remboursements pour la transaction ${transaction.id}:`, { 
+          code: refundsError.code,
+          message: refundsError.message,
+          details: refundsError.details
+        });
+        throw refundsError;
+      }
+
+      // 2. Si des remboursements existent, les supprimer
+      if (refunds && refunds.length > 0) {
+        console.info(`Suppression de ${refunds.length} remboursement(s) pour la transaction ${transaction.id}`);
+        
+        const { error: deleteRefundsError } = await supabase
+          .from('refunds')
+          .delete()
+          .eq('transaction_id', transaction.id);
+
+        if (deleteRefundsError) {
+          console.error(`Erreur lors de la suppression des remboursements pour la transaction ${transaction.id}:`, { 
+            code: deleteRefundsError.code,
+            message: deleteRefundsError.message,
+            details: deleteRefundsError.details
+          });
+          throw deleteRefundsError;
+        }
+      }
+
+      // 3. Procéder à la suppression de la transaction
       const { error } = await supabase
         .from('transactions')
         .delete()
-        .eq('id', transaction.id)
+        .eq('id', transaction.id);
 
-      if (error) throw error
+      if (error) {
+        console.error(`Erreur Supabase lors de la suppression de la transaction ${transaction.id}:`, { 
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+        throw error;
+      }
 
       toast({
         title: "Transaction supprimée",
-        description: "La transaction a été supprimée avec succès.",
-      })
+        description: refunds && refunds.length > 0 
+          ? `Transaction et ${refunds.length} remboursement(s) associé(s) supprimés avec succès.` 
+          : "Transaction supprimée avec succès.",
+      });
 
-      onTransactionChange?.()
+      onTransactionChange?.();
     } catch (error) {
-      console.error('Erreur lors de la suppression:', error)
+      // Affiche des informations plus détaillées sur l'erreur
+      if (error instanceof Error) {
+        console.error(`Erreur lors de la suppression de la transaction ${transaction.id}:`, {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        });
+      } else {
+        console.error(`Erreur inconnue lors de la suppression de la transaction ${transaction.id}:`, error);
+      }
+      
       toast({
         title: "Erreur",
-        description: "Une erreur est survenue lors de la suppression de la transaction.",
+        description: "Une erreur est survenue lors de la suppression de la transaction. Veuillez réessayer ou contacter le support.",
         variant: "destructive",
-      })
+      });
     }
   }
 

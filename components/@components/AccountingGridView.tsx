@@ -6,7 +6,7 @@ import { format } from "date-fns"
 import { fr } from "date-fns/locale"
 import { formatCurrency } from "@/lib/format"
 import { cn } from "@/lib/utils"
-import { ComparisonMode } from "./AccountingFilters"
+import { ComparisonMode } from "./accounting/AccountingFilters"
 import {
   Table,
   TableBody,

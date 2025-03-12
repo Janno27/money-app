@@ -11,12 +11,15 @@ export default async function LoginPage() {
   } = await supabase.auth.getSession()
 
   if (session) {
-    redirect('/dashboard')
+    redirect('/onboarding')
   }
 
   return (
-    <div className="container relative flex h-screen flex-col items-center justify-center">
-      <LoginForm />
+    <div className="flex min-h-screen">
+      <div className="flex flex-col justify-center w-full max-w-md mx-auto p-4">
+        <LoginForm />
+        {/* Le bouton de diagnostic est intégré dans le composant LoginForm */}
+      </div>
     </div>
   )
 }

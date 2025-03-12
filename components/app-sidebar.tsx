@@ -52,13 +52,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <NavProjects />
         </SidebarContent>
         <SidebarFooter>
-          <NavSettings onSettingsClick={() => setSettingsOpen(true)} />
           <NavUser />
         </SidebarFooter>
         <SidebarRail />
       </Sidebar>
-      
-      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </>
   )
 }
