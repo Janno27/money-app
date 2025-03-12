@@ -442,92 +442,134 @@ export class DemoDataGenerator {
     
     // Pour chaque mois entre startDate et endDate
     let currentDate = new Date(startDate);
+    
     while (currentDate <= endDate) {
       // Choisir 1 ou 2 types de surprises pour ce mois (garantie)
       const numSurprises = Math.floor(Math.random() * 2) + 1;
-      const selectedSurprises = [...surpriseTypes];
       
-      // Mélanger le tableau pour une sélection aléatoire
-      for (let i = selectedSurprises.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [selectedSurprises[i], selectedSurprises[j]] = [selectedSurprises[j], selectedSurprises[i]];
-      }
+      // Créer une copie du tableau et le mélanger pour une sélection aléatoire
+      const shuffledSurprises = [...surpriseTypes].sort(() => Math.random() - 0.5);
       
       // Pour chaque surprise sélectionnée
-      for (let i = 0; i < numSurprises; i++) {
-        const surprise = selectedSurprises[i];
+      for (let i = 0; i < numSurprises && i < shuffledSurprises.length; i++) {
+        const surprise = shuffledSurprises[i];
         
-        // Trouver les informations de catégorie
-        let categoryInfo = categoryMap.get(surprise.category);
-        
-        // Recherche approximative si nécessaire
-        if (!categoryInfo) {
-          for (const [catName, catInfo] of categoryMap.entries()) {
-            if (catName.includes(surprise.category) || surprise.category.includes(catName)) {
-              categoryInfo = catInfo;
-              break;
-            }
-          }
-        }
-        
+        // Vérifier si la catégorie existe
+        const categoryInfo = this.findMatchingCategory(categoryMap, surprise.category);
         if (!categoryInfo) continue;
         
         const categoryId = categoryInfo.id;
         
         // Trouver la sous-catégorie
-        let subcategoryId: string | null = null;
-        const subcategoriesMap = categoryInfo.subcategories;
+        const subcategoryId = this.findMatchingSubcategory(categoryInfo.subcategories, surprise.subcategory);
         
-        if (subcategoriesMap.has(surprise.subcategory)) {
-          subcategoryId = subcategoriesMap.get(surprise.subcategory) || null;
-        } else {
-          for (const [subName, subId] of subcategoriesMap.entries()) {
-            if (subName.includes(surprise.subcategory) || surprise.subcategory.includes(subName)) {
-              subcategoryId = subId;
-              break;
-            }
-          }
-        }
+        // Déterminer l'utilisateur en fonction du type de dépense
+        const userId = this.selectUserForExpense(users, surprise.expenseType);
         
-        // Choisir un utilisateur selon le type de dépense
-        let userId: string;
-        if (surprise.expenseType === 'couple') {
-          userId = users[0].id;
-        } else {
-          userId = users.length > 1 ? users[Math.floor(Math.random() * users.length)].id : users[0].id;
-        }
+        // Créer une date aléatoire dans le mois courant
+        const transactionDate = this.createRandomDateInMonth(currentDate, startDate, endDate);
         
-        // Définir une date aléatoire dans le mois
-        const transactionDate = new Date(currentDate);
-        transactionDate.setDate(Math.floor(Math.random() * 28) + 1);
-        
-        // Si la date est dans la période valide
-        if (transactionDate >= startDate && transactionDate <= endDate && categoryId) {
-          // Générer un montant aléatoire
+        // Ne créer la transaction que si la date est dans la période valide
+        if (transactionDate && transactionDate >= startDate && transactionDate <= endDate) {
+          // Générer un montant aléatoire dans la fourchette définie
           const amount = this.getRandomAmount(surprise.amount.min, surprise.amount.max);
           
-          // S'assurer que subcategoryId n'est pas undefined
-          const finalSubcategoryId = subcategoryId === undefined ? null : subcategoryId;
-          
-          // Créer la transaction surprise
+          // Ajouter la transaction au tableau
           transactions.push({
-            amount: amount,
+            amount,
             description: surprise.description,
             transaction_date: format(transactionDate, 'yyyy-MM-dd'),
             accounting_date: format(transactionDate, 'yyyy-MM-dd'),
             category_id: categoryId,
-            subcategory_id: finalSubcategoryId,
+            subcategory_id: subcategoryId,
             user_id: userId,
             expense_type: surprise.expenseType,
             is_income: false,
-            organization_id: organization_id
+            organization_id
           });
         }
       }
       
       // Passer au mois suivant
-      currentDate.setMonth(currentDate.getMonth() + 1);
+      const nextMonth = new Date(currentDate);
+      nextMonth.setMonth(nextMonth.getMonth() + 1);
+      currentDate = nextMonth;
     }
+  }
+  
+  // Trouver une catégorie correspondante ou une catégorie similaire
+  private findMatchingCategory(categoryMap: Map<string, any>, categoryName: string): any {
+    // Recherche directe
+    const exactMatch = categoryMap.get(categoryName);
+    if (exactMatch) return exactMatch;
+    
+    // Recherche approximative
+    for (const [catName, catInfo] of categoryMap.entries()) {
+      if (catName.includes(categoryName) || categoryName.includes(catName)) {
+        return catInfo;
+      }
+    }
+    
+    return null;
+  }
+  
+  // Trouver une sous-catégorie correspondante ou similaire
+  private findMatchingSubcategory(subcategoriesMap: Map<string, string>, subcategoryName: string): string | null {
+    // Recherche directe
+    const exactMatch = subcategoriesMap.get(subcategoryName);
+    if (exactMatch !== undefined) return exactMatch;
+    
+    // Recherche approximative
+    for (const [subName, subId] of subcategoriesMap.entries()) {
+      if (subName.includes(subcategoryName) || subcategoryName.includes(subName)) {
+        return subId;
+      }
+    }
+    
+    return null;
+  }
+  
+  // Sélectionner un utilisateur en fonction du type de dépense
+  private selectUserForExpense(users: any[], expenseType: ExpenseType): string {
+    // Si pas d'utilisateurs, retourner une chaîne vide
+    if (!users || users.length === 0) {
+      return '';
+    }
+    
+    // Pour les dépenses de couple, utiliser le premier utilisateur
+    if (expenseType === 'couple') {
+      return users[0].id;
+    }
+    
+    // Pour les dépenses individuelles, choisir un utilisateur aléatoire
+    return users[Math.floor(Math.random() * users.length)].id;
+  }
+  
+  // Créer une date aléatoire dans le mois donné, qui soit dans l'intervalle valide
+  private createRandomDateInMonth(monthDate: Date, startDate: Date, endDate: Date): Date | null {
+    if (!monthDate || !startDate || !endDate) return null;
+    
+    try {
+      const year = monthDate.getFullYear();
+      const month = monthDate.getMonth();
+      
+      // Déterminer le nombre de jours dans le mois (28 pour simplifier)
+      const daysInMonth = 28;
+      
+      // Choisir un jour aléatoire
+      const day = Math.floor(Math.random() * daysInMonth) + 1;
+      
+      const date = new Date(year, month, day);
+      
+      // Vérifier si la date est dans l'intervalle valide
+      if (date && date >= startDate && date <= endDate) {
+        return date;
+      }
+    } catch (error) {
+      console.error("Erreur lors de la création d'une date aléatoire:", error);
+    }
+    
+    return null;
   }
 
   // Générer les transactions de revenus
