@@ -5,29 +5,27 @@ export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  const organizationId = params.id
-
-  if (!organizationId) {
-    return NextResponse.json({
-      success: false,
-      error: "ID d'organisation requis"
-    }, { status: 400 })
-  } // Ajout de l'accolade manquante ici
-
   try {
+    const organizationId = params.id
+
+    if (!organizationId) {
+      return NextResponse.json({
+        success: false,
+        error: "ID d'organisation requis"
+      }, { status: 400 })
+    }
+
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
     if (!supabaseUrl || !supabaseServiceKey) {
-      console.error("Variables d'environnement manquantes")
       return NextResponse.json({
         success: false,
-        error: "Configuration du serveur incomplète."
+        error: "Configuration serveur invalide"
       }, { status: 500 })
     }
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
-
     const { data: orgData, error: orgError } = await supabaseAdmin
       .from('organizations')
       .select('id, name')
@@ -35,7 +33,6 @@ export async function GET(
       .single()
 
     if (orgError) {
-      console.error("Erreur lors de la récupération de l'organisation:", orgError)
       return NextResponse.json({
         success: false,
         error: "Organisation introuvable"
@@ -51,7 +48,7 @@ export async function GET(
     console.error('Erreur:', error)
     return NextResponse.json({
       success: false,
-      error: error instanceof Error ? error.message : 'Erreur inconnue'
+      error: error instanceof Error ? error.message : 'Erreur système'
     }, { status: 500 })
   }
 }
