@@ -1,11 +1,13 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
+type Params = { id: string }
+
 export async function GET(
   request: Request,
-  context: { params: { id: string } }
+  { params }: { params: Params }
 ) {
-  const organizationId = context.params.id
+  const organizationId = params.id
   
   if (!organizationId) {
     return NextResponse.json({ 
