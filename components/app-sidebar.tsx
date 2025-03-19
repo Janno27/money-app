@@ -16,6 +16,7 @@ import { NavProjects } from "@/components/nav-projects"
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
 import { LogoSwitcher } from "@/components/logo-switcher"
+import { ThemeSwitcher } from "@/components/theme-switcher"
 import { data, NavMainItem } from "@/lib/data"
 
 function NavSettings({ onSettingsClick }: { onSettingsClick: () => void }) {
@@ -45,7 +46,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <>
       <Sidebar collapsible="icon" variant="inset" {...props}>
         <SidebarHeader className="flex items-center justify-between px-2 py-2">
-          <LogoSwitcher />
+          <div className="flex items-center justify-between w-full">
+            <LogoSwitcher />
+            <ThemeSwitcher />
+          </div>
         </SidebarHeader>
         <SidebarContent>
           <NavMain items={navItems} />

@@ -24,11 +24,11 @@ interface NoteCardProps {
 }
 
 const colors = {
-  yellow: "bg-yellow-100 hover:bg-yellow-200 border-yellow-200",
-  blue: "bg-blue-100 hover:bg-blue-200 border-blue-200",
-  green: "bg-green-100 hover:bg-green-200 border-green-200",
-  pink: "bg-pink-100 hover:bg-pink-200 border-pink-200",
-  purple: "bg-purple-100 hover:bg-purple-200 border-purple-200",
+  yellow: "bg-yellow-100 hover:bg-yellow-200 border-yellow-200 dark:bg-yellow-900/80 dark:hover:bg-yellow-800 dark:border-yellow-700 dark:text-yellow-50",
+  blue: "bg-blue-100 hover:bg-blue-200 border-blue-200 dark:bg-blue-900/80 dark:hover:bg-blue-800 dark:border-blue-700 dark:text-blue-50",
+  green: "bg-green-100 hover:bg-green-200 border-green-200 dark:bg-green-900/80 dark:hover:bg-green-800 dark:border-green-700 dark:text-green-50",
+  pink: "bg-pink-100 hover:bg-pink-200 border-pink-200 dark:bg-pink-900/80 dark:hover:bg-pink-800 dark:border-pink-700 dark:text-pink-50",
+  purple: "bg-purple-100 hover:bg-purple-200 border-purple-200 dark:bg-purple-900/80 dark:hover:bg-purple-800 dark:border-purple-700 dark:text-purple-50",
 }
 
 export function NoteCard({ note, onUpdate, onDelete }: NoteCardProps) {
@@ -62,7 +62,7 @@ export function NoteCard({ note, onUpdate, onDelete }: NoteCardProps) {
               <AvatarImage src={note.user?.avatar || undefined} />
               <AvatarFallback>{note.user?.name?.[0] || "U"}</AvatarFallback>
             </Avatar>
-            <span className="text-sm font-medium">{note.user?.name || "Utilisateur"}</span>
+            <span className="text-sm font-medium text-slate-800 dark:text-slate-100">{note.user?.name || "Utilisateur"}</span>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -103,13 +103,13 @@ export function NoteCard({ note, onUpdate, onDelete }: NoteCardProps) {
           value={content}
           onChange={(e) => handleContentChange(e.target.value)}
           placeholder="Écrivez votre note ici..."
-          className="min-h-[100px] resize-none bg-transparent border-0 p-0 focus-visible:ring-0"
+          className="min-h-[100px] resize-none bg-transparent border-0 p-0 focus-visible:ring-0 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
         />
 
-        <div className="text-[10px] text-muted-foreground">
+        <div className="text-[10px] text-slate-600 dark:text-slate-300">
           <div>Créée {formatDate(note.created_at)}</div>
           {note.updated_at !== note.created_at && (
-            <div className="text-muted-foreground/60">
+            <div className="text-slate-500 dark:text-slate-400">
               Modifiée {formatDate(note.updated_at)}
             </div>
           )}

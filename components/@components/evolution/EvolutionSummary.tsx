@@ -6,6 +6,7 @@ import { fr } from "date-fns/locale"
 import { formatCurrency } from "@/lib/format"
 import { ArrowDown, ArrowUp, Minus, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface YearSummary {
   totalIncome: number
@@ -34,8 +35,10 @@ export function EvolutionSummary({ onYearChange, selectedYear: externalSelectedY
     balance: 0
   })
   const supabase = createClientComponentClient()
+  const [isLoading, setIsLoading] = useState(true)
 
   const fetchYearData = async (year: string) => {
+    setIsLoading(true)
     const startDate = new Date(parseInt(year), 0, 1)
     const endDate = new Date(parseInt(year), 11, 31)
 
@@ -47,6 +50,7 @@ export function EvolutionSummary({ onYearChange, selectedYear: externalSelectedY
 
     if (error) {
       console.error('Error fetching data:', error)
+      setIsLoading(false)
       return null
     }
 
@@ -65,6 +69,7 @@ export function EvolutionSummary({ onYearChange, selectedYear: externalSelectedY
     })
 
     summary.balance = summary.totalIncome - summary.totalExpenses
+    setIsLoading(false)
     return summary
   }
 
@@ -134,17 +139,18 @@ export function EvolutionSummary({ onYearChange, selectedYear: externalSelectedY
     if (percentage === null) return null
 
     const Icon = difference > 0 ? ArrowUp : difference < 0 ? ArrowDown : Minus
-    const color = difference > 0 ? "text-emerald-500" : difference < 0 ? "text-rose-500" : "text-muted-foreground"
-    
+    const color = difference > 0 
+      ? "text-emerald-500 dark:text-emerald-400" 
+      : difference < 0 
+      ? "text-rose-500 dark:text-rose-400" 
+      : "text-muted-foreground dark:text-slate-400"
+
     return (
-      <div className="flex items-center gap-2">
-        <span className={`text-muted-foreground ${isDashboard ? 'text-[0.6rem]' : 'text-xs'}`}>
-          vs {selectedYear}
-        </span>
-        <div className={`flex items-center gap-1 text-xs ${color}`}>
+      <div className="flex items-center gap-1 text-[0.65rem]">
+        <div className={`flex items-center gap-1 ${color}`}>
           <Icon className="h-3 w-3" />
           <span>{Math.abs(percentage).toFixed(1)}%</span>
-          <span className="text-xs text-muted-foreground">
+          <span className="text-xs text-muted-foreground dark:text-slate-400">
             ({formatCurrency(Math.abs(difference))})
           </span>
         </div>
@@ -152,11 +158,15 @@ export function EvolutionSummary({ onYearChange, selectedYear: externalSelectedY
     )
   }
 
+  if (isLoading) {
+    return <EvolutionSummarySkeleton />
+  }
+
   return (
-    <div className="flex items-end gap-6 px-6 py-4">
+    <div className={`flex items-end gap-6 px-6 py-4 ${isDashboard ? 'dashboard-summary' : ''}`}>
       <div className="space-y-1">
-        <div className="text-sm text-muted-foreground">Balance {currentYear}</div>
-        <div className="text-2xl font-medium">
+        <div className="text-sm text-muted-foreground dark:text-slate-300">Balance {currentYear}</div>
+        <div className="text-2xl font-medium dark:text-white">
           {formatCurrency(currentYearData.balance)}
         </div>
         {selectedYear && (
@@ -164,11 +174,11 @@ export function EvolutionSummary({ onYearChange, selectedYear: externalSelectedY
         )}
       </div>
 
-      <div className="h-12 w-[1px] bg-border mx-2 mb-1" />
+      <div className="h-12 w-[1px] bg-border dark:bg-slate-600 mx-2 mb-1" />
 
       <div className="space-y-0.5 mb-1">
-        <div className="text-[0.65rem] text-muted-foreground">Revenus {currentYear}</div>
-        <div className="text-sm font-medium">
+        <div className="text-[0.65rem] text-muted-foreground dark:text-slate-300">Revenus {currentYear}</div>
+        <div className="text-sm font-medium dark:text-white">
           {formatCurrency(currentYearData.totalIncome)}
         </div>
         {selectedYear && (
@@ -177,8 +187,8 @@ export function EvolutionSummary({ onYearChange, selectedYear: externalSelectedY
       </div>
 
       <div className="space-y-0.5 mb-1">
-        <div className="text-[0.65rem] text-muted-foreground">Dépenses {currentYear}</div>
-        <div className="text-sm font-medium">
+        <div className="text-[0.65rem] text-muted-foreground dark:text-slate-300">Dépenses {currentYear}</div>
+        <div className="text-sm font-medium dark:text-white">
           {formatCurrency(currentYearData.totalExpenses)}
         </div>
         {selectedYear && (
@@ -218,6 +228,38 @@ export function EvolutionSummary({ onYearChange, selectedYear: externalSelectedY
         >
           <ChevronRight className="h-3 w-3" />
         </Button>
+      </div>
+    </div>
+  )
+}
+
+export function EvolutionSummarySkeleton() {
+  return (
+    <div className="flex items-end gap-6 px-6 py-4">
+      <div className="space-y-1">
+        <div className="h-4 w-24 bg-muted/40 rounded-sm animate-pulse mb-2"></div>
+        <div className="h-8 w-32 bg-muted/60 rounded-sm animate-pulse"></div>
+        <div className="h-4 w-36 bg-muted/40 rounded-sm animate-pulse mt-1"></div>
+      </div>
+
+      <div className="h-12 w-[1px] bg-muted/30 mx-2 mb-1"></div>
+
+      <div className="space-y-0.5 mb-1">
+        <div className="h-3 w-20 bg-muted/40 rounded-sm animate-pulse mb-1"></div>
+        <div className="h-5 w-24 bg-muted/60 rounded-sm animate-pulse"></div>
+        <div className="h-3 w-28 bg-muted/40 rounded-sm animate-pulse mt-1"></div>
+      </div>
+
+      <div className="space-y-0.5 mb-1">
+        <div className="h-3 w-20 bg-muted/40 rounded-sm animate-pulse mb-1"></div>
+        <div className="h-5 w-24 bg-muted/60 rounded-sm animate-pulse"></div>
+        <div className="h-3 w-28 bg-muted/40 rounded-sm animate-pulse mt-1"></div>
+      </div>
+
+      <div className="flex items-center gap-1 mb-[6px]">
+        <div className="h-5 w-5 rounded-full bg-muted/40 animate-pulse"></div>
+        <div className="h-4 w-10 bg-muted/50 rounded-sm animate-pulse"></div>
+        <div className="h-5 w-5 rounded-full bg-muted/40 animate-pulse"></div>
       </div>
     </div>
   )

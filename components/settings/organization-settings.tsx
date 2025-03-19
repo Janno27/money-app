@@ -36,7 +36,8 @@ import {
   Trash2,
   UserCog,
   CheckCircle,
-  Copy
+  Copy,
+  Plus
 } from "lucide-react"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -419,10 +420,13 @@ export function OrganizationSettings() {
               
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button size="sm" variant="outline" className="bg-white border border-zinc-200 shadow-sm hover:bg-zinc-100">
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Inviter par email
-                  </Button>
+                  <button 
+                    className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1"
+                    onClick={() => {}}
+                  >
+                    <Plus className="h-3 w-3" />
+                    Inviter un membre
+                  </button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>

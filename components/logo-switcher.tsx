@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import { useState, useEffect } from "react"
-import { Users } from "lucide-react"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
 import {
@@ -10,10 +9,11 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export function LogoSwitcher() {
-  const [organizationName, setOrganizationName] = useState<string>("Soares-Rosset")
-  const [isLoading, setIsLoading] = useState(false)
+  const [organizationName, setOrganizationName] = useState<string>("")
+  const [isLoading, setIsLoading] = useState(true)
   const supabase = createClientComponentClient()
 
   useEffect(() => {
@@ -59,14 +59,11 @@ export function LogoSwitcher() {
       <SidebarMenuItem>
         <SidebarMenuButton
           size="lg"
-          className="w-full justify-start"
+          className="justify-start w-auto"
         >
-          <div className="mr-3 h-8 w-8 rounded-lg bg-primary/10 p-1.5">
-            <Users className="h-full w-full text-primary" />
-          </div>
-          <div className="grid flex-1 text-left text-sm leading-tight">
+          <div className="grid text-left text-sm leading-tight">
             {isLoading ? (
-              <span className="font-bold">Soares-Rosset</span>
+              <Skeleton className="h-5 w-24" />
             ) : (
               <span className="font-bold">{organizationName}</span>
             )}

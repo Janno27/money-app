@@ -256,17 +256,21 @@ export function CalendarView({ currentDate, transactions, onTransactionsChange, 
   }
 
   const renderEventIndicator = (event: Event, eventIndex: number) => {
-    const color = `hsl(${(eventIndex * 50) % 360}, 70%, 50%)`
+    // Générer une couleur plus accessible et adaptée au mode sombre
+    // Utilisation de couleurs pastel plus visibles pour tous les modes
+    const baseHue = (eventIndex * 50) % 360;
+    const color = `hsl(${baseHue}, 70%, 50%)`;
+    const darkModeColor = `hsl(${baseHue}, 60%, 60%)`; // Plus lumineux pour le mode sombre
     
     return (
       <ContextMenu key={event.id}>
         <ContextMenuTrigger asChild>
           <div
-            className="absolute w-[calc(100%+2px)] h-[12px] hover:h-[14px] transition-all -left-[1px] rounded-sm flex items-center px-1 overflow-hidden cursor-pointer"
+            className="absolute w-[calc(100%+2px)] h-[12px] hover:h-[14px] transition-all -left-[1px] rounded-sm flex items-center px-1 overflow-hidden cursor-pointer shadow-sm"
             style={{
-              backgroundColor: color,
+              backgroundColor: `var(--event-color-${eventIndex % 10}, ${color})`,
               bottom: `${eventIndex * 16}px`,
-              opacity: 0.7
+              opacity: 0.8
             }}
             onClick={(e) => {
               e.preventDefault()
@@ -285,11 +289,11 @@ export function CalendarView({ currentDate, transactions, onTransactionsChange, 
                 </TooltipTrigger>
                 <TooltipContent
                   side="bottom"
-                  className="bg-background/95 backdrop-blur-sm p-3 border shadow-sm rounded-md min-w-[200px]"
+                  className="bg-background/95 dark:bg-slate-800/95 backdrop-blur-sm p-3 border border-slate-200 dark:border-slate-700 shadow-md rounded-md min-w-[200px]"
                 >
                   <div className="space-y-2">
                     <div className="flex items-center justify-between gap-2">
-                      <div className="text-sm font-medium text-foreground">{event.title}</div>
+                      <div className="text-sm font-medium text-foreground dark:text-slate-200">{event.title}</div>
                       <div className="flex -space-x-2">
                         {event.participants.map((participant) => {
                           if (!participant.user) return null
@@ -303,12 +307,12 @@ export function CalendarView({ currentDate, transactions, onTransactionsChange, 
                                 <Image
                                   src={participant.user.avatar}
                                   alt={participant.user.name}
-                                  className="h-5 w-5 rounded-full border-2 border-background"
+                                  className="h-5 w-5 rounded-full border-2 border-background dark:border-slate-800"
                                   width={20}
                                   height={20}
                                 />
                               ) : (
-                                <div className="h-5 w-5 rounded-full bg-primary/10 border-2 border-background flex items-center justify-center text-[0.6rem] text-primary">
+                                <div className="h-5 w-5 rounded-full bg-primary/10 dark:bg-primary/20 border-2 border-background dark:border-slate-800 flex items-center justify-center text-[0.6rem] text-primary dark:text-blue-400">
                                   {participant.user.name[0]}
                                 </div>
                               )}
@@ -318,16 +322,16 @@ export function CalendarView({ currentDate, transactions, onTransactionsChange, 
                       </div>
                     </div>
                     {event.description && (
-                      <div className="text-xs text-muted-foreground/90">{event.description}</div>
+                      <div className="text-xs text-muted-foreground/90 dark:text-slate-400">{event.description}</div>
                     )}
-                    <div className="text-xs font-medium text-primary">
+                    <div className="text-xs font-medium text-primary dark:text-blue-400">
                       {format(new Date(event.start_date), 'dd MMMM yyyy', { locale: fr })}
                       {event.start_time ? (
-                        <span className="text-muted-foreground ml-1">
+                        <span className="text-muted-foreground dark:text-slate-500 ml-1">
                           à {format(parse(event.start_time, 'HH:mm:ss', new Date()), 'HH:mm')}
                         </span>
                       ) : (
-                        <span className="text-muted-foreground ml-1">
+                        <span className="text-muted-foreground dark:text-slate-500 ml-1">
                           Journée
                         </span>
                       )}
@@ -338,18 +342,19 @@ export function CalendarView({ currentDate, transactions, onTransactionsChange, 
             </TooltipProvider>
           </div>
         </ContextMenuTrigger>
-        <ContextMenuContent>
+        <ContextMenuContent className="bg-background/95 dark:bg-slate-800/95 backdrop-blur-sm border border-slate-200 dark:border-slate-700 shadow-md">
           <ContextMenuItem
             onClick={() => {
               setSelectedEvent(event)
               setIsEditEventOpen(true)
             }}
+            className="text-slate-800 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white focus:text-slate-900 dark:focus:text-white"
           >
-            <Pencil className="h-4 w-4 mr-2" />
+            <Pencil className="h-4 w-4 mr-2 text-slate-500 dark:text-slate-400" />
             Modifier
           </ContextMenuItem>
           <ContextMenuItem
-            className="text-destructive"
+            className="text-destructive dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 focus:text-red-600 dark:focus:text-red-300"
             onClick={() => handleDeleteEvent(event)}
           >
             <Trash2 className="h-4 w-4 mr-2" />
@@ -359,6 +364,54 @@ export function CalendarView({ currentDate, transactions, onTransactionsChange, 
       </ContextMenu>
     )
   }
+
+  // Variable CSS pour le mode sombre
+  useEffect(() => {
+    if (calendarRef.current) {
+      const isDark = document.documentElement.classList.contains('dark');
+      
+      // Définir les couleurs en fonction du thème avec des contrastes améliorés pour le mode sombre
+      if (isDark) {
+        calendarRef.current.style.setProperty('--background-color', '#0f172a'); // slate-900
+        calendarRef.current.style.setProperty('--border-start-color', '#475569'); // slate-600 (plus contrasté)
+        calendarRef.current.style.setProperty('--border-mid-color', '#60a5fa'); // blue-400 (plus lumineux)
+        calendarRef.current.style.setProperty('--glow-color', 'rgba(96, 165, 250, 0.35)'); // blue-400 avec opacité
+        calendarRef.current.style.setProperty('--tooltip-bg', 'rgba(30, 41, 59, 0.95)'); // slate-800 avec transparence
+        calendarRef.current.style.setProperty('--muted-overlay', 'rgba(30, 41, 59, 0.2)'); // overlay pour le fond muted
+        
+        // Couleurs d'événements plus lumineuses pour le mode sombre
+        calendarRef.current.style.setProperty('--event-color-0', 'hsl(0, 60%, 60%)');      // Rouge
+        calendarRef.current.style.setProperty('--event-color-1', 'hsl(30, 60%, 60%)');     // Orange
+        calendarRef.current.style.setProperty('--event-color-2', 'hsl(60, 60%, 55%)');     // Jaune
+        calendarRef.current.style.setProperty('--event-color-3', 'hsl(120, 55%, 55%)');    // Vert
+        calendarRef.current.style.setProperty('--event-color-4', 'hsl(180, 60%, 50%)');    // Cyan
+        calendarRef.current.style.setProperty('--event-color-5', 'hsl(210, 65%, 60%)');    // Bleu
+        calendarRef.current.style.setProperty('--event-color-6', 'hsl(240, 60%, 65%)');    // Indigo
+        calendarRef.current.style.setProperty('--event-color-7', 'hsl(270, 65%, 65%)');    // Violet
+        calendarRef.current.style.setProperty('--event-color-8', 'hsl(300, 60%, 65%)');    // Rose
+        calendarRef.current.style.setProperty('--event-color-9', 'hsl(330, 60%, 65%)');    // Rose-rouge
+      } else {
+        calendarRef.current.style.setProperty('--background-color', '#fff');
+        calendarRef.current.style.setProperty('--border-start-color', '#e2e8f0'); // slate-200
+        calendarRef.current.style.setProperty('--border-mid-color', '#2563eb'); // blue-600
+        calendarRef.current.style.setProperty('--glow-color', 'rgba(37, 99, 235, 0.25)'); // blue-600 avec opacité
+        calendarRef.current.style.setProperty('--tooltip-bg', 'rgba(255, 255, 255, 0.95)'); // white avec transparence
+        calendarRef.current.style.setProperty('--muted-overlay', 'rgba(241, 245, 249, 0.3)'); // slate-100 avec transparence
+        
+        // Couleurs d'événements normales pour le mode clair
+        calendarRef.current.style.setProperty('--event-color-0', 'hsl(0, 70%, 50%)');      // Rouge
+        calendarRef.current.style.setProperty('--event-color-1', 'hsl(30, 70%, 50%)');     // Orange
+        calendarRef.current.style.setProperty('--event-color-2', 'hsl(60, 70%, 45%)');     // Jaune
+        calendarRef.current.style.setProperty('--event-color-3', 'hsl(120, 65%, 45%)');    // Vert
+        calendarRef.current.style.setProperty('--event-color-4', 'hsl(180, 70%, 40%)');    // Cyan
+        calendarRef.current.style.setProperty('--event-color-5', 'hsl(210, 75%, 50%)');    // Bleu
+        calendarRef.current.style.setProperty('--event-color-6', 'hsl(240, 70%, 55%)');    // Indigo
+        calendarRef.current.style.setProperty('--event-color-7', 'hsl(270, 75%, 55%)');    // Violet
+        calendarRef.current.style.setProperty('--event-color-8', 'hsl(300, 70%, 55%)');    // Rose
+        calendarRef.current.style.setProperty('--event-color-9', 'hsl(330, 70%, 55%)');    // Rose-rouge
+      }
+    }
+  }, []);
 
   // Initialiser les variables CSS au chargement
   useEffect(() => {
@@ -428,20 +481,39 @@ export function CalendarView({ currentDate, transactions, onTransactionsChange, 
       calendarRef.current.style.setProperty('--gradient-direction', gradientDirection);
       calendarRef.current.style.setProperty('--gradient-position', `${gradientPosition}%`);
       
-      // Ajuster la lueur en fonction de la proximité du bord
+      // Ajuster la lueur en fonction de la proximité du bord et du mode sombre
+      const isDark = document.documentElement.classList.contains('dark');
       if (isNearEdge) {
-        calendarRef.current.style.boxShadow = '0 0 20px rgba(37, 99, 235, 0.3)';
+        if (isDark) {
+          calendarRef.current.style.boxShadow = '0 0 20px var(--glow-color)';
+        } else {
+          calendarRef.current.style.boxShadow = '0 0 20px rgba(37, 99, 235, 0.3)';
+        }
       } else {
-        calendarRef.current.style.boxShadow = '0 0 15px rgba(37, 99, 235, 0.1)';
+        if (isDark) {
+          calendarRef.current.style.boxShadow = '0 0 15px rgba(59, 130, 246, 0.15)';
+        } else {
+          calendarRef.current.style.boxShadow = '0 0 15px rgba(37, 99, 235, 0.1)';
+        }
       }
       
-      // Mettre à jour le gradient de bordure en fonction de la proximité
-      if (isNearEdge) {
-        calendarRef.current.style.background = 'linear-gradient(#fff, #fff) padding-box, linear-gradient(to ' + 
-          gradientDirection + ', #e2e8f0, #3b82f6 ' + (minDist * 2) + '%, #1e40af ' + (minDist * 3) + '%, #e2e8f0) border-box';
+      // Mettre à jour le gradient de bordure en fonction de la proximité et du mode sombre
+      if (isDark) {
+        if (isNearEdge) {
+          calendarRef.current.style.background = 'linear-gradient(#0f172a, #0f172a) padding-box, linear-gradient(to ' + 
+            gradientDirection + ', #475569, #60a5fa ' + (minDist * 2) + '%, #3b82f6 ' + (minDist * 3) + '%, #475569) border-box';
+        } else {
+          calendarRef.current.style.background = 'linear-gradient(#0f172a, #0f172a) padding-box, linear-gradient(to ' + 
+            gradientDirection + ', #475569, #60a5fa ' + gradientPosition + '%, #475569) border-box';
+        }
       } else {
-        calendarRef.current.style.background = 'linear-gradient(#fff, #fff) padding-box, linear-gradient(to ' + 
-          gradientDirection + ', #e2e8f0, #2563eb ' + gradientPosition + '%, #e2e8f0) border-box';
+        if (isNearEdge) {
+          calendarRef.current.style.background = 'linear-gradient(#fff, #fff) padding-box, linear-gradient(to ' + 
+            gradientDirection + ', #e2e8f0, #3b82f6 ' + (minDist * 2) + '%, #1e40af ' + (minDist * 3) + '%, #e2e8f0) border-box';
+        } else {
+          calendarRef.current.style.background = 'linear-gradient(#fff, #fff) padding-box, linear-gradient(to ' + 
+            gradientDirection + ', #e2e8f0, #2563eb ' + gradientPosition + '%, #e2e8f0) border-box';
+        }
       }
     };
     
@@ -457,23 +529,23 @@ export function CalendarView({ currentDate, transactions, onTransactionsChange, 
   return (
     <div 
       ref={calendarRef}
-      className="h-full flex flex-col rounded-xl relative bg-white"
+      className="h-full flex flex-col rounded-xl relative bg-white dark:bg-slate-900"
       style={{ 
         borderRadius: '12px',
         border: '1px solid transparent',
         backgroundClip: 'padding-box',
-        background: 'linear-gradient(#fff, #fff) padding-box, linear-gradient(to var(--gradient-direction, right), #e2e8f0, #2563eb var(--gradient-position, 50%), #e2e8f0) border-box',
+        background: 'linear-gradient(var(--background-color, #fff), var(--background-color, #fff)) padding-box, linear-gradient(to var(--gradient-direction, right), var(--border-start-color, #e2e8f0), var(--border-mid-color, #2563eb) var(--gradient-position, 50%), var(--border-start-color, #e2e8f0)) border-box',
         overflow: 'hidden',
         boxShadow: '0 0 15px rgba(37, 99, 235, 0.1)',
         transition: 'box-shadow 0.3s ease'
       }}
     >
       {/* En-tête des jours de la semaine */}
-      <div className="flex-none grid grid-cols-7 border-b bg-muted" style={{ borderTopLeftRadius: '11px', borderTopRightRadius: '11px' }}>
+      <div className="flex-none grid grid-cols-7 border-b border-slate-200 dark:border-slate-700 bg-muted/50 dark:bg-slate-800/50" style={{ borderTopLeftRadius: '11px', borderTopRightRadius: '11px' }}>
         {daysOfWeek.map((day) => (
           <div
             key={day}
-            className="px-3 py-2 text-sm font-medium text-muted-foreground text-center"
+            className="px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 text-center"
           >
             {day}
           </div>
@@ -481,7 +553,7 @@ export function CalendarView({ currentDate, transactions, onTransactionsChange, 
       </div>
 
       {/* Grille des jours */}
-      <div className="flex-1 grid grid-cols-7 grid-rows-6 divide-x divide-y bg-muted/30" style={{ borderBottomLeftRadius: '11px', borderBottomRightRadius: '11px' }}>
+      <div className="flex-1 grid grid-cols-7 grid-rows-6 divide-x divide-y divide-slate-200 dark:divide-slate-700/70 bg-muted/30 dark:bg-slate-800/20" style={{ borderBottomLeftRadius: '11px', borderBottomRightRadius: '11px' }}>
         {allDays.map((date, index) => {
           const isCurrentMonth = isSameMonth(date, currentDate)
           const isCurrentDay = isToday(date)
@@ -501,16 +573,20 @@ export function CalendarView({ currentDate, transactions, onTransactionsChange, 
                 delay: index * 0.01 
               }}
               className={cn(
-                "relative p-2 bg-background hover:bg-muted/50 transition-colors",
-                !isCurrentMonth && "text-muted-foreground bg-muted/5",
+                "relative p-2 hover:bg-muted/50 dark:hover:bg-slate-800/50 transition-colors",
+                isCurrentMonth 
+                  ? "bg-background dark:bg-slate-900" 
+                  : "text-muted-foreground bg-muted/5 dark:bg-slate-800/5",
                 "cursor-pointer"
               )}
             >
               <div
                 className={cn(
                   "flex h-6 w-6 items-center justify-center rounded-full text-sm transition-colors",
-                  isCurrentDay && "bg-primary text-primary-foreground font-semibold",
-                  !isCurrentDay && "hover:bg-muted-foreground/10"
+                  isCurrentDay 
+                    ? "bg-primary text-primary-foreground font-semibold dark:bg-blue-500 dark:text-white" 
+                    : "hover:bg-muted-foreground/10 dark:hover:bg-slate-700/50",
+                  !isCurrentMonth && "text-slate-400 dark:text-slate-500"
                 )}
               >
                 {format(date, 'd')}
@@ -522,22 +598,22 @@ export function CalendarView({ currentDate, transactions, onTransactionsChange, 
                   <TooltipProvider delayDuration={0}>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <div className="h-2 w-2 rounded-full bg-destructive/70 hover:bg-destructive transition-colors" />
+                        <div className="h-2 w-2 rounded-full bg-destructive/70 hover:bg-destructive transition-colors shadow-sm dark:bg-red-500/80 dark:hover:bg-red-500" />
                       </TooltipTrigger>
-                      <TooltipContent side="right" className="bg-background/95 backdrop-blur-sm p-3 border shadow-sm rounded-md">
-                        <div className="text-xs font-medium text-foreground mb-2">{format(date, 'd MMMM yyyy', { locale: fr })}</div>
+                      <TooltipContent side="right" className="bg-background/95 dark:bg-slate-800/95 backdrop-blur-sm p-3 border border-slate-200 dark:border-slate-700 shadow-md rounded-md">
+                        <div className="text-xs font-medium text-foreground dark:text-slate-200 mb-2">{format(date, 'd MMMM yyyy', { locale: fr })}</div>
                         <div className="space-y-2">
                           {dayTransactions
                             .filter(t => !t.is_income)
                             .map(transaction => (
                               <div key={transaction.id} className="space-y-0.5">
-                                <div className="text-[0.6rem] text-muted-foreground">Dépense</div>
-                                <div className="text-xs font-medium text-destructive">
+                                <div className="text-[0.6rem] text-muted-foreground dark:text-slate-400">Dépense</div>
+                                <div className="text-xs font-medium text-destructive dark:text-red-400">
                                   {formatCurrency(Math.abs(transaction.amount))}
                                 </div>
-                                <div className="text-xs text-foreground">{transaction.description}</div>
+                                <div className="text-xs text-foreground dark:text-slate-300">{transaction.description}</div>
                                 {transaction.category && (
-                                  <div className="text-xs text-foreground">{transaction.category.name}</div>
+                                  <div className="text-xs text-slate-500 dark:text-slate-400">{transaction.category.name}</div>
                                 )}
                               </div>
                             ))}
@@ -550,22 +626,22 @@ export function CalendarView({ currentDate, transactions, onTransactionsChange, 
                   <TooltipProvider delayDuration={0}>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <div className="h-2 w-2 rounded-full bg-emerald-500/70 hover:bg-emerald-500 transition-colors" />
+                        <div className="h-2 w-2 rounded-full bg-emerald-500/70 hover:bg-emerald-500 transition-colors shadow-sm dark:bg-emerald-400/80 dark:hover:bg-emerald-400" />
                       </TooltipTrigger>
-                      <TooltipContent side="right" className="bg-background/95 backdrop-blur-sm p-3 border shadow-sm rounded-md">
-                        <div className="text-xs font-medium text-foreground mb-2">{format(date, 'd MMMM yyyy', { locale: fr })}</div>
+                      <TooltipContent side="right" className="bg-background/95 dark:bg-slate-800/95 backdrop-blur-sm p-3 border border-slate-200 dark:border-slate-700 shadow-md rounded-md">
+                        <div className="text-xs font-medium text-foreground dark:text-slate-200 mb-2">{format(date, 'd MMMM yyyy', { locale: fr })}</div>
                         <div className="space-y-2">
                           {dayTransactions
                             .filter(t => t.is_income)
                             .map(transaction => (
                               <div key={transaction.id} className="space-y-0.5">
-                                <div className="text-[0.6rem] text-muted-foreground">Revenu</div>
-                                <div className="text-xs font-medium text-emerald-500">
+                                <div className="text-[0.6rem] text-muted-foreground dark:text-slate-400">Revenu</div>
+                                <div className="text-xs font-medium text-emerald-500 dark:text-emerald-400">
                                   {formatCurrency(Math.abs(transaction.amount))}
                                 </div>
-                                <div className="text-xs text-foreground">{transaction.description}</div>
+                                <div className="text-xs text-foreground dark:text-slate-300">{transaction.description}</div>
                                 {transaction.category && (
-                                  <div className="text-xs text-foreground">{transaction.category.name}</div>
+                                  <div className="text-xs text-slate-500 dark:text-slate-400">{transaction.category.name}</div>
                                 )}
                               </div>
                             ))}
@@ -590,24 +666,24 @@ export function CalendarView({ currentDate, transactions, onTransactionsChange, 
               {/* Menu contextuel pour les événements */}
               {selectedEvent && (
                 <Popover open={!!selectedEvent} onOpenChange={() => setSelectedEvent(null)}>
-                  <PopoverContent className="w-40 p-2" align="end">
+                  <PopoverContent className="w-40 p-2 bg-background/95 dark:bg-slate-800/95 backdrop-blur-sm border border-slate-200 dark:border-slate-700 shadow-md" align="end">
                     <div className="flex flex-col gap-1">
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="justify-start text-xs"
+                        className="justify-start text-xs text-slate-800 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/70"
                         onClick={() => {
                           // TODO: Implémenter la modification
                           setSelectedEvent(null)
                         }}
                       >
-                        <Pencil className="mr-2 h-3.5 w-3.5" />
+                        <Pencil className="mr-2 h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
                         Modifier
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="justify-start text-xs text-destructive hover:text-destructive"
+                        className="justify-start text-xs text-destructive dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-destructive dark:hover:text-red-300"
                         onClick={() => {
                           handleDeleteEvent(selectedEvent)
                           setSelectedEvent(null)
@@ -627,45 +703,45 @@ export function CalendarView({ currentDate, transactions, onTransactionsChange, 
                   <motion.button
                     initial={{ opacity: 0 }}
                     whileHover={{ opacity: 1 }}
-                    className="absolute bottom-1 right-1 p-1 text-muted-foreground/50 hover:text-foreground transition-colors"
+                    className="absolute bottom-1 right-1 p-1 text-muted-foreground/50 hover:text-foreground dark:text-slate-500/50 dark:hover:text-slate-300 transition-colors"
                     onClick={() => setSelectedDate(date)}
                   >
                     +
                   </motion.button>
                 </PopoverTrigger>
-                <PopoverContent className="w-40 p-2" align="end">
+                <PopoverContent className="w-40 p-2 bg-background/95 dark:bg-slate-800/95 backdrop-blur-sm border border-slate-200 dark:border-slate-700 shadow-md" align="end">
                   <div className="flex flex-col gap-1">
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="justify-start text-xs"
+                      className="justify-start text-xs text-slate-800 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/70"
                       onClick={() => {
                         setIsAddExpenseDialogOpen(true)
                       }}
                     >
-                      <Wallet className="mr-2 h-3.5 w-3.5" />
+                      <Wallet className="mr-2 h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
                       Dépense
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="justify-start text-xs"
+                      className="justify-start text-xs text-slate-800 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/70"
                       onClick={() => {
                         setIsAddIncomeDialogOpen(true)
                       }}
                     >
-                      <CircleDollarSign className="mr-2 h-3.5 w-3.5" />
+                      <CircleDollarSign className="mr-2 h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
                       Revenu
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="justify-start text-xs"
+                      className="justify-start text-xs text-slate-800 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/70"
                       onClick={() => {
                         setIsAddEventDialogOpen(true)
                       }}
                     >
-                      <CalendarPlus className="mr-2 h-3.5 w-3.5" />
+                      <CalendarPlus className="mr-2 h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
                       Événement
                     </Button>
                   </div>

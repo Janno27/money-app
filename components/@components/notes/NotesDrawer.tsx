@@ -242,32 +242,35 @@ export function NotesDrawer() {
       <DrawerContent className="h-[80vh]">
         <DrawerHeader className="px-6">
           <div className="space-y-1">
-            <DrawerTitle className="text-2xl font-medium tracking-tight text-slate-700">Notes</DrawerTitle>
-            <DrawerDescription className="text-md text-slate-600">
+            <DrawerTitle className="text-2xl font-medium tracking-tight text-slate-700 dark:text-white">Notes</DrawerTitle>
+            <DrawerDescription className="text-md text-slate-600 dark:text-slate-300">
               Appuyez sur ⌘N pour ouvrir/fermer
             </DrawerDescription>
           </div>
           <div className="flex justify-between items-center mt-4">
             <Select value={selectedCreator} onValueChange={setSelectedCreator}>
-              <SelectTrigger className="w-[200px]">
+              <SelectTrigger className="w-[200px] dark:bg-slate-800 dark:border-slate-700 dark:text-white">
                 <SelectValue placeholder="Filtrer par créateur" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les créateurs</SelectItem>
+              <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
+                <SelectItem value="all" className="dark:text-white dark:focus:bg-slate-700">Tous les créateurs</SelectItem>
                 {creators.map((creator) => (
-                  <SelectItem key={creator.id} value={creator.id}>
+                  <SelectItem key={creator.id} value={creator.id} className="dark:text-white dark:focus:bg-slate-700">
                     {creator.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <Button onClick={handleCreateNote} size="sm">
-              <Plus className="mr-2 h-4 w-4" />
+            <button 
+              onClick={handleCreateNote} 
+              className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1"
+            >
+              <Plus className="h-3 w-3" />
               Nouvelle note
-            </Button>
+            </button>
           </div>
         </DrawerHeader>
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-auto">
           <NotesCanvas
             notes={filteredNotes}
             onUpdateNote={handleUpdateNote}

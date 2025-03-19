@@ -303,7 +303,7 @@ export function LoginForm({
         setLoading(false)
       }
     } else {
-      // Logique de connexion existante
+      // Logique de connexion
       try {
         const { error } = await signInWithPassword({
           email,
@@ -364,8 +364,32 @@ export function LoginForm({
           throw error
         }
 
-        router.refresh()
-        router.push('/onboarding')
+        // Récupérer les préférences utilisateur pour vérifier si l'onboarding est complété
+        const { data: { user } } = await supabase.auth.getUser()
+        
+        if (user) {
+          // Récupérer les préférences de l'utilisateur
+          const { data: preferences, error: preferencesError } = await supabase
+            .from('user_preferences')
+            .select('completed_onboarding, theme')
+            .eq('user_id', user.id)
+            .single()
+          
+          // Rediriger selon si l'onboarding est complété ou non
+          router.refresh()
+          
+          if (preferencesError || !preferences || preferences.completed_onboarding !== true) {
+            // Si pas de préférences ou onboarding non complété, rediriger vers onboarding
+            router.push('/onboarding')
+          } else {
+            // Si onboarding complété, rediriger vers dashboard
+            router.push('/dashboard')
+          }
+        } else {
+          // Fallback au cas où user serait null (ne devrait pas arriver)
+          router.refresh()
+          router.push('/onboarding')
+        }
       } catch (err) {
         console.error("Erreur de connexion:", err)
       } finally {

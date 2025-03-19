@@ -6,10 +6,12 @@ from typing import List, Optional, Dict, Any
 from datetime import date, datetime, timedelta
 import os
 from dotenv import load_dotenv
+import uvicorn
 
 from .database import get_db
 from .models import Transaction, Category, Subcategory
 from .forecasting import generate_forecast, simulate_forecast
+from .routes import import_excel, finalize_import, complete_import
 
 # Importation pour Supabase
 from .supabase_forecasting import generate_forecast_supabase
@@ -19,12 +21,12 @@ print("Module Supabase activé")
 # Charger les variables d'environnement
 load_dotenv()
 
-app = FastAPI(title="MoneyApp Budget Forecasting API")
+app = FastAPI(title="MoneyApp API", description="API pour l'application MoneyApp")
 
 # Configuration CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # À restreindre en production
+    allow_origins=["*"],  # En production, spécifiez les origines autorisées
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -78,7 +80,7 @@ class ForecastResponse(BaseModel):
 # Routes API
 @app.get("/")
 async def root():
-    return {"message": "MoneyApp Budget Forecasting API"}
+    return {"message": "Bienvenue sur l'API MoneyApp"}
 
 @app.get("/api/test")
 async def test_api():
@@ -238,6 +240,10 @@ async def simulate(
             detail=f"Erreur lors de la simulation: {str(e)}"
         )
 
+# Inclure les routes
+app.include_router(import_excel.router, prefix="/api", tags=["Import"])
+app.include_router(finalize_import.router, prefix="/api", tags=["Import"])
+app.include_router(complete_import.router, prefix="/api", tags=["Import"])
+
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True) 
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True) 

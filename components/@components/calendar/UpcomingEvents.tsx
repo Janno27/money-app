@@ -1,12 +1,22 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { format, isToday, isTomorrow, isThisWeek, isThisMonth, compareAsc, isSameDay } from "date-fns"
+import { format, isToday, isTomorrow, isThisWeek, isThisMonth, compareAsc, isSameDay, addDays, isPast } from "date-fns"
 import { fr } from "date-fns/locale"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Pencil } from "lucide-react"
+import { Pencil, CalendarPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
+import { Card } from "@/components/ui/card"
+import { MoreHorizontal } from "lucide-react"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface Event {
   id: string
@@ -31,6 +41,7 @@ interface UpcomingEventsProps {
   events: Event[]
   onEventEdit?: (event: Event) => void
   hideTitle?: boolean
+  isDashboard?: boolean
 }
 
 interface GroupedEvents {
@@ -41,7 +52,7 @@ interface GroupedEvents {
   future: Event[]
 }
 
-export function UpcomingEvents({ events, onEventEdit, hideTitle }: UpcomingEventsProps) {
+export function UpcomingEvents({ events, onEventEdit, hideTitle, isDashboard = false }: UpcomingEventsProps) {
   const [groupedEvents, setGroupedEvents] = useState<GroupedEvents>({
     today: [],
     tomorrow: [],
@@ -99,73 +110,68 @@ export function UpcomingEvents({ events, onEventEdit, hideTitle }: UpcomingEvent
     setGroupedEvents(grouped)
   }, [events])
 
+  const formatEventDate = (dateStr: string) => {
+    const date = new Date(dateStr)
+    
+    if (isToday(date)) {
+      return "Aujourd'hui"
+    }
+    
+    if (isSameDay(date, addDays(new Date(), 1))) {
+      return "Demain"
+    }
+    
+    return format(date, 'EEEE d MMMM', { locale: fr })
+  }
+
   const renderEvent = (event: Event) => {
     return (
-      <div
-        key={event.id}
-        className="bg-white shadow-sm p-3 border rounded-lg space-y-2"
+      <Card 
+        key={event.id} 
+        className="p-3 hover:shadow-md transition-shadow border cursor-pointer dark:bg-slate-700/80 dark:border-slate-600/80 dark:hover:bg-slate-600/80"
+        onClick={() => onEventEdit?.(event)}
       >
-        <div className="flex items-center justify-between">
-          <div className="font-medium">{event.title}</div>
-          {onEventEdit && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={() => onEventEdit(event)}
-            >
-              <Pencil className="h-3 w-3" />
-            </Button>
-          )}
+        <div className="flex justify-between">
+          <h4 className="font-medium text-sm dark:text-slate-50">{event.title}</h4>
+          <span className="text-xs text-muted-foreground dark:text-slate-300">{formatEventDate(event.start_date)}</span>
         </div>
-
-        <div className="text-xs text-muted-foreground">
-          {format(new Date(event.start_date), 'EEEE d MMMM', { locale: fr })}
-          {event.end_date && !isSameDay(new Date(event.start_date), new Date(event.end_date)) && (
-            <> au {format(new Date(event.end_date), 'EEEE d MMMM', { locale: fr })}</>
-          )}
-          {event.start_time && (
-            <> · {event.start_time.slice(0, 5)}</>
-          )}
-        </div>
-
-        {(event.description || event.location) && (
-          <div className="space-y-1 text-sm">
-            {event.description && (
-              <p className="text-muted-foreground">{event.description}</p>
-            )}
-            {event.location && (
-              <p className="text-xs text-muted-foreground">📍 {event.location}</p>
-            )}
+        {event.description && (
+          <p className="text-xs text-muted-foreground dark:text-slate-300 mt-1 line-clamp-1">{event.description}</p>
+        )}
+        {event.participants && event.participants.length > 0 && (
+          <div className="flex items-center mt-2">
+            <div className="flex -space-x-2">
+              {event.participants.slice(0, 3).map((participant, index) => (
+                <TooltipProvider key={index}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Avatar className="h-6 w-6 border-2 border-background dark:border-slate-700/80">
+                        <AvatarImage src={participant.user.avatar || undefined} />
+                        <AvatarFallback className="text-xs">
+                          {participant.user.name?.charAt(0) || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs">{participant.user.name}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ))}
+              {event.participants.length > 3 && (
+                <Avatar className="h-6 w-6 border-2 border-background dark:border-slate-700/80 bg-muted dark:bg-slate-800">
+                  <AvatarFallback className="text-xs dark:text-slate-200">
+                    +{event.participants.length - 3}
+                  </AvatarFallback>
+                </Avatar>
+              )}
+            </div>
+            <span className="text-xs text-muted-foreground dark:text-slate-300 ml-2">
+              {event.participants.length} participant{event.participants.length > 1 ? "s" : ""}
+            </span>
           </div>
         )}
-
-        {event.participants.length > 0 && (
-          <div className="flex -space-x-2">
-            {event.participants.map((participant) => (
-              <div
-                key={participant.user.id}
-                className="relative"
-                title={participant.user.name}
-              >
-                {participant.user.avatar ? (
-                  <Image
-                    src={participant.user.avatar}
-                    alt={participant.user.name}
-                    className="h-6 w-6 rounded-full border-2 border-background"
-                    width={24}
-                    height={24}
-                  />
-                ) : (
-                  <div className="h-6 w-6 rounded-full bg-primary/10 border-2 border-background flex items-center justify-center text-[0.65rem] text-primary font-medium">
-                    {participant.user.name[0]}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      </Card>
     )
   }
 
@@ -173,9 +179,32 @@ export function UpcomingEvents({ events, onEventEdit, hideTitle }: UpcomingEvent
     if (events.length === 0) return null
 
     return (
-      <div className="space-y-3 mb-6 p-4 rounded-lg">
+      <div className="space-y-3 mb-6">
         <h3 className="text-sm font-medium">{title}</h3>
         {events.map(renderEvent)}
+      </div>
+    )
+  }
+
+  if (events.length === 0) {
+    return (
+      <div className="flex flex-col h-full">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-100">Événements à venir</h3>
+          {!isDashboard && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1"
+            >
+              <CalendarPlus className="h-4 w-4" />
+              <span className="text-xs">Ajouter</span>
+            </Button>
+          )}
+        </div>
+        <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
+          Aucun événement prévu prochainement
+        </div>
       </div>
     )
   }
@@ -184,17 +213,19 @@ export function UpcomingEvents({ events, onEventEdit, hideTitle }: UpcomingEvent
     <div className="h-full flex flex-col">
       {!hideTitle && (
         <div className="space-y-1.5 mb-6">
-          <h2 className="text-lg font-semibold text-slate-700">Événements à venir</h2>
-          <p className="text-sm text-slate-600">
-            Aperçu des prochains événements
-          </p>
+          <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-100">
+            {isDashboard ? "Événements à venir →" : "Événements à venir"}
+          </h3>
+          {isDashboard && (
+            <p className="text-sm text-slate-600 dark:text-slate-300">
+              Aperçu des prochains événements
+            </p>
+          )}
         </div>
       )}
 
       <ScrollArea className="flex-1 -mr-6 pr-6">
-        {renderSection("Aujourd'hui", groupedEvents.today)}
-        {renderSection("Demain", groupedEvents.tomorrow)}
-        {renderSection("Cette semaine", groupedEvents.thisWeek)}
+        {renderSection("Cette semaine", [...groupedEvents.today, ...groupedEvents.tomorrow, ...groupedEvents.thisWeek])}
         {renderSection("Ce mois", groupedEvents.thisMonth)}
         {renderSection("Plus tard", groupedEvents.future)}
 
@@ -204,6 +235,50 @@ export function UpcomingEvents({ events, onEventEdit, hideTitle }: UpcomingEvent
           </div>
         )}
       </ScrollArea>
+    </div>
+  )
+}
+
+export function UpcomingEventsSkeleton({ isDashboard = false }: { isDashboard?: boolean }) {
+  return (
+    <div className="space-y-4">
+      {!isDashboard && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Skeleton className="h-4 w-24" />
+            </div>
+            <Skeleton className="h-8 w-8 rounded-md" />
+          </div>
+        </div>
+      )}
+      
+      <div className="space-y-4">
+        {!isDashboard && (
+          <div className="space-y-1">
+            <div className="flex items-center space-x-2">
+              <Skeleton className="h-4 w-16" />
+            </div>
+          </div>
+        )}
+        
+        <div className="space-y-1.5">
+          {Array.from({ length: isDashboard ? 4 : 3 }).map((_, i) => (
+            <div key={i} className="flex items-start space-x-3">
+              <Skeleton className="h-10 w-10 rounded-md" />
+              <div className="space-y-1 flex-1">
+                <div className="flex justify-between">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-4 w-14" />
+                </div>
+                {!isDashboard && (
+                  <Skeleton className="h-3 w-48" />
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 } 

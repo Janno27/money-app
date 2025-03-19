@@ -6,6 +6,8 @@ import { ChevronRight, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import { formatCurrency } from "@/lib/format"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface Category {
   id: string
@@ -33,6 +35,7 @@ export function EvolutionDistribution({ showAllSubcategories }: EvolutionDistrib
   const [isLoading, setIsLoading] = useState(true)
   const [totalExpenses, setTotalExpenses] = useState(0)
   const [totalIncome, setTotalIncome] = useState(0)
+  const [activeTab, setActiveTab] = useState<'expenses' | 'income'>('expenses')
   const supabase = createClientComponentClient()
 
   const toggleCategory = (categoryId: string) => {
@@ -142,6 +145,7 @@ export function EvolutionDistribution({ showAllSubcategories }: EvolutionDistrib
   const renderCategory = (category: Category) => {
     const isExpanded = expandedCategories.has(category.id)
     const hasSubcategories = category.subcategories.length > 0
+    const isExpensesTab = activeTab === 'expenses'
 
     return (
       <div key={category.id} className="space-y-1.5 mb-3">
@@ -166,8 +170,11 @@ export function EvolutionDistribution({ showAllSubcategories }: EvolutionDistrib
             <div className="flex items-center gap-2">
               <div className="w-[120px] h-2 bg-muted rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-foreground transition-all duration-1000 ease-out"
-                  style={{ width: `${category.percentage}%` }}
+                  className="h-full transition-all duration-1000 ease-out"
+                  style={{ 
+                    width: `${category.percentage}%`,
+                    backgroundColor: '#3b82f6'
+                  }}
                 />
               </div>
               <span className="text-sm text-muted-foreground w-12 text-right">
@@ -188,10 +195,11 @@ export function EvolutionDistribution({ showAllSubcategories }: EvolutionDistrib
                 <div className="flex items-center gap-2">
                   <div className="w-[100px] h-1.5 bg-muted rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-muted-foreground transition-all duration-1000 ease-out"
+                      className="h-full transition-all duration-1000 ease-out"
                       style={{ 
                         width: `${sub.percentage}%`,
-                        transitionDelay: `${index * 100}ms`
+                        transitionDelay: `${index * 100}ms`,
+                        backgroundColor: '#60a5fa'
                       }}
                     />
                   </div>
@@ -225,10 +233,11 @@ export function EvolutionDistribution({ showAllSubcategories }: EvolutionDistrib
             <div className="flex items-center gap-2">
               <div className="w-[120px] h-1.5 bg-muted rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-foreground transition-all duration-1000 ease-out"
+                  className="h-full transition-all duration-1000 ease-out"
                   style={{ 
                     width: `${sub.globalPercentage}%`,
-                    transitionDelay: `${index * 50}ms`
+                    transitionDelay: `${index * 50}ms`,
+                    backgroundColor: '#3b82f6'
                   }}
                 />
               </div>
@@ -243,16 +252,30 @@ export function EvolutionDistribution({ showAllSubcategories }: EvolutionDistrib
   }
 
   if (isLoading) {
-    return <div className="h-full flex items-center justify-center">Chargement...</div>
+    return <EvolutionDistributionSkeleton />
   }
 
   return (
     <div className="h-full flex flex-col">
-      <Tabs defaultValue="expenses" className="h-full flex flex-col">
+      <Tabs 
+        defaultValue="expenses" 
+        className="h-full flex flex-col"
+        onValueChange={(value) => setActiveTab(value as 'expenses' | 'income')}
+      >
         <div className="flex-none">
-          <TabsList className="w-full grid grid-cols-2">
-            <TabsTrigger value="expenses">Dépenses</TabsTrigger>
-            <TabsTrigger value="income">Revenus</TabsTrigger>
+          <TabsList className="w-full grid grid-cols-2 bg-slate-100 dark:bg-slate-800">
+            <TabsTrigger 
+              value="expenses" 
+              className="data-[state=active]:bg-blue-500 data-[state=active]:text-white"
+            >
+              Dépenses
+            </TabsTrigger>
+            <TabsTrigger 
+              value="income"
+              className="data-[state=active]:bg-blue-500 data-[state=active]:text-white"
+            >
+              Revenus
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -289,6 +312,78 @@ export function EvolutionDistribution({ showAllSubcategories }: EvolutionDistrib
             </ScrollArea>
           </TabsContent>
         </div>
+      </Tabs>
+    </div>
+  )
+}
+
+export function EvolutionDistributionSkeleton() {
+  // Valeurs constantes pour remplacer les valeurs aléatoires
+  const categoryWidths = [65, 75, 55, 85, 45];
+  const subcategoryWidths = [60, 70, 50];
+  
+  return (
+    <div className="w-full h-full">
+      {/* Tabs skeleton */}
+      <Tabs defaultValue="expenses" className="w-full">
+        <div className="flex items-center justify-between mb-2">
+          <TabsList className="w-full">
+            <TabsTrigger value="expenses" className="flex-1">
+              <Skeleton className="h-4 w-16 rounded-sm" />
+            </TabsTrigger>
+            <TabsTrigger value="income" className="flex-1">
+              <Skeleton className="h-4 w-16 rounded-sm" />
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        {/* Content skeleton */}
+        <ScrollArea className="h-full max-h-[calc(100vh-400px)]">
+          <div className="space-y-2 px-1 py-2">
+            {/* Catégories de dépenses simulées */}
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="bg-background/80 border border-border rounded-md overflow-hidden">
+                <div className="p-2 flex items-center justify-between bg-muted/20">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center bg-muted/40">
+                      <ChevronDown className="h-3 w-3 text-muted-foreground/50" />
+                    </div>
+                    <Skeleton className="h-4 w-24 rounded-sm" />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Skeleton className="h-4 w-16 rounded-sm" />
+                    <div className="w-24 h-4 relative overflow-hidden rounded-full bg-muted/20">
+                      <div 
+                        className="absolute inset-y-0 left-0 bg-muted/50 rounded-full animate-pulse"
+                        style={{ width: `${categoryWidths[i % categoryWidths.length]}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Sous-catégories (visible pour une catégorie) */}
+                {i === 1 && (
+                  <div className="p-2 space-y-2">
+                    {Array.from({ length: 3 }).map((_, j) => (
+                      <div key={j} className="flex items-center justify-between px-4 py-1">
+                        <Skeleton className="h-3 w-20 rounded-sm" />
+                        <div className="flex items-center space-x-2">
+                          <Skeleton className="h-3 w-12 rounded-sm" />
+                          <div className="w-16 h-3 relative overflow-hidden rounded-full bg-muted/20">
+                            <div 
+                              className="absolute inset-y-0 left-0 bg-muted/40 rounded-full animate-pulse"
+                              style={{ width: `${subcategoryWidths[j % subcategoryWidths.length]}%`, animationDelay: `${j * 150}ms` }}
+                            ></div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
       </Tabs>
     </div>
   )

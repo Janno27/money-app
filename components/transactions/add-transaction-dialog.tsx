@@ -120,9 +120,7 @@ export function AddTransactionDialog({
     const fetchUsers = async () => {
       try {
         const { data, error } = await supabase
-          .from('users')
-          .select('id, name, avatar')
-          .order('name')
+          .rpc('get_users_in_my_organization')
 
         if (error) {
           console.error('Error fetching users:', error)

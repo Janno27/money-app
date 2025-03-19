@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Search, PenLine, RotateCcw, ChevronDown, Plus, Settings2 } from "lucide-react"
+import { Search, PenLine, RotateCcw, ChevronDown, Plus, Settings2, Maximize, Minimize, Maximize2, Minimize2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -25,6 +25,12 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cn } from "@/lib/utils"
 import { Transaction } from "@/components/transactions/columns"
 import { AddTransactionDialog } from "@/components/transactions/add-transaction-dialog"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 export type ComparisonMode = 'month-to-month' | 'month-to-average'
 
@@ -36,6 +42,8 @@ interface AccountingFiltersProps {
   onComparisonModeChange?: (mode: ComparisonMode, selectedMonths?: string[]) => void
   comparisonMode?: ComparisonMode
   onDateRangeChange?: (range: { from: Date | null; to: Date | null }) => void
+  onMaximize?: () => void
+  isMaximized?: boolean
 }
 
 export function AccountingFilters({
@@ -45,7 +53,9 @@ export function AccountingFilters({
   onToggleAllCategories,
   onComparisonModeChange,
   comparisonMode = 'month-to-month',
-  onDateRangeChange
+  onDateRangeChange,
+  onMaximize,
+  isMaximized = false
 }: AccountingFiltersProps) {
   const [open, setOpen] = React.useState(false)
   const [transactions, setTransactions] = React.useState<Transaction[]>([])
@@ -147,13 +157,14 @@ export function AccountingFilters({
 
       <div className="flex items-center gap-4 ml-auto">
         <div className="flex items-center gap-2">
-          <Label htmlFor="comparison-mode" className="text-sm">
+          <Label htmlFor="comparison-mode" className="text-sm text-slate-700 dark:text-slate-300">
             {comparisonMode === 'month-to-month' ? 'Mois précédent' : 'Moyenne'}
           </Label>
           <Switch 
             id="comparison-mode" 
             checked={comparisonMode === 'month-to-average'}
             onCheckedChange={handleModeToggle}
+            className="data-[state=checked]:bg-blue-500 dark:data-[state=checked]:bg-blue-600"
           />
         </div>
         
@@ -166,7 +177,7 @@ export function AccountingFilters({
             </PopoverTrigger>
             <PopoverContent className="w-80" align="end">
               <div className="space-y-4">
-                <div className="font-medium text-sm">Mois à inclure dans la moyenne</div>
+                <div className="font-medium text-sm dark:text-slate-200">Mois à inclure dans la moyenne</div>
                 <div className="grid grid-cols-2 gap-2">
                   {months.map((month) => (
                     <div key={month} className="flex items-center space-x-2">
@@ -177,7 +188,7 @@ export function AccountingFilters({
                       />
                       <label
                         htmlFor={month}
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 dark:text-slate-300"
                       >
                         {month}
                       </label>
@@ -188,6 +199,33 @@ export function AccountingFilters({
             </PopoverContent>
           </Popover>
         )}
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn(
+            "hover:bg-slate-100 dark:hover:bg-slate-700",
+            isMaximized 
+              ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30" 
+              : "text-slate-700 dark:text-slate-300"
+          )}
+          onClick={onMaximize}
+        >
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                {isMaximized ? (
+                  <Minimize2 className="h-4 w-4 transition-transform duration-300 animate-pulse" />
+                ) : (
+                  <Maximize2 className="h-4 w-4 transition-transform duration-300" />
+                )}
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{isMaximized ? 'Réduire le tableau' : 'Agrandir le tableau'}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </Button>
 
         <Button
           variant="ghost"
@@ -203,8 +241,8 @@ export function AccountingFilters({
           <SheetHeader className="px-6 py-6">
             <div className="flex items-center justify-between">
               <div>
-                <SheetTitle>Transactions</SheetTitle>
-                <SheetDescription>
+                <SheetTitle className="dark:text-slate-100">Transactions</SheetTitle>
+                <SheetDescription className="dark:text-slate-300">
                   Visualisez et filtrez vos transactions
                 </SheetDescription>
               </div>
@@ -212,7 +250,7 @@ export function AccountingFilters({
                 <Button 
                   onClick={() => setIsAddExpenseDialogOpen(true)} 
                   variant="link" 
-                  className="text-slate-700 flex items-center gap-1 hover:gap-2 transition-all hover:bg-slate-100 rounded-md"
+                  className="text-slate-700 dark:text-slate-300 flex items-center gap-1 hover:gap-2 transition-all hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md"
                 >
                   <Plus className="h-4 w-4" />
                   Ajouter une dépense
@@ -220,7 +258,7 @@ export function AccountingFilters({
                 <Button 
                   onClick={() => setIsAddIncomeDialogOpen(true)} 
                   variant="link" 
-                  className="text-slate-700 flex items-center gap-1 hover:gap-2 transition-all hover:bg-slate-100 rounded-md"
+                  className="text-slate-700 dark:text-slate-300 flex items-center gap-1 hover:gap-2 transition-all hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md"
                 >
                   <Plus className="h-4 w-4" />
                   Ajouter un revenu

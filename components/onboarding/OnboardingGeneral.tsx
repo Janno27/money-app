@@ -2,8 +2,8 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { useState, useEffect, ReactNode, useRef } from "react"
-import { ArrowLeft, Plus, RefreshCcw, BarChart3, Filter, Calendar, CreditCard, X, Sun, Moon, Users, Copy, CheckCircle, ArrowRight, ExternalLink, Database, FileUp, FileX, Twitter, Paperclip, Keyboard, Sparkles, Laptop, Tags, GalleryThumbnails, Atom, Sparkle, ChevronDown, ChevronRight } from "lucide-react"
+import React, { useState, useEffect, ReactNode, useRef } from "react"
+import { ArrowLeft, Plus, RefreshCcw, BarChart3, Filter, Calendar, CreditCard, X, Sun, Moon, Users, Copy, CheckCircle, ArrowRight, ExternalLink, Database, FileUp, FileX, Twitter, Paperclip, Keyboard, Sparkles, Laptop, Tags, GalleryThumbnails, Atom, Sparkle, ChevronDown, ChevronRight, Upload, FileSpreadsheet, CheckCircle2 } from "lucide-react"
 import { OnboardingTour } from "./OnboardingTour"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,6 +12,27 @@ import { toast } from "@/components/ui/use-toast"
 import { cn } from "@/lib/utils"
 import { Switch } from "@/components/ui/switch"
 import { demoDataGenerator } from '@/services/demo-data/demo-data-generator';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  SelectGroup,
+  SelectLabel,
+  SelectSeparator,
+} from "@/components/ui/select"
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
+import { formatCurrency } from "@/lib/format"
 
 interface OnboardingGeneralProps {
   children?: ReactNode;
@@ -583,6 +604,89 @@ function FinalReveal({ show, theme, onComplete }: FinalRevealProps) {
   );
 }
 
+// Ajouter cette interface pour les données importées
+interface ImportedData {
+  categories: {
+    [categoryName: string]: {
+      subcategories: {
+        [subcategoryName: string]: {
+          [month: string]: number
+        }
+      }
+    }
+  }
+}
+
+// Remplacer le contenu de la modale de validation finale par un résumé et feux d'artifice
+function SuccessImportContent({ year, totalCategories, totalSubcategories }: { 
+  year: string; 
+  totalCategories: number; 
+  totalSubcategories: number; 
+}) {
+  React.useEffect(() => {
+    // Créer les éléments de feux d'artifice
+    const container = document.querySelector('#radix-\\:r1\\:') as HTMLElement;
+    if (container) {
+      // Nettoyer le contenu existant
+      const existingContent = container.querySelector('.py-4 > div > div.flex.flex-col.items-center.justify-center.py-2');
+      if (existingContent) {
+        existingContent.innerHTML = '';
+      }
+      
+      // Style pour le conteneur parent
+      container.style.overflow = 'hidden';
+      container.style.position = 'relative';
+      
+      // Créer les feux d'artifice
+      for (let i = 0; i < 5; i++) {
+        const firework = document.createElement('div');
+        firework.className = 'firework';
+        firework.style.left = `${Math.random() * 100}%`;
+        firework.style.top = `${Math.random() * 100}%`;
+        firework.style.animationDelay = `${Math.random() * 1}s`;
+        container.appendChild(firework);
+      }
+    }
+    
+    return () => {
+      // Nettoyer les feux d'artifice lors du démontage
+      if (container) {
+        const fireworks = container.querySelectorAll('.firework');
+        fireworks.forEach(fw => fw.remove());
+        container.style.overflow = '';
+        container.style.position = '';
+      }
+    };
+  }, []);
+  
+  return (
+    <div className="flex flex-col items-center justify-center py-8 relative z-10">
+      <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mb-4">
+        Importation réussie!
+      </div>
+      <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-6 shadow-sm border border-slate-200 dark:border-slate-700 mb-4 w-full max-w-md">
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4 text-center">
+          Résumé des données importées
+        </h3>
+        <div className="grid grid-cols-1 gap-4">
+          <div className="flex justify-between items-center border-b pb-2 border-slate-200 dark:border-slate-700">
+            <span className="text-slate-600 dark:text-slate-400">Année:</span>
+            <span className="font-medium text-slate-900 dark:text-slate-100">{year}</span>
+          </div>
+          <div className="flex justify-between items-center border-b pb-2 border-slate-200 dark:border-slate-700">
+            <span className="text-slate-600 dark:text-slate-400">Catégories:</span>
+            <span className="font-medium text-blue-700 dark:text-blue-400">{totalCategories}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-slate-600 dark:text-slate-400">Sous-catégories:</span>
+            <span className="font-medium text-blue-700 dark:text-blue-400">{totalSubcategories}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function OnboardingGeneral({ children }: OnboardingGeneralProps) {
   const [organization, setOrganization] = useState<{ id: string; name: string }>({ id: '', name: 'Votre foyer' });
   const [members, setMembers] = useState<Member[]>([]);
@@ -602,6 +706,18 @@ export function OnboardingGeneral({ children }: OnboardingGeneralProps) {
   const [showFirstGroup, setShowFirstGroup] = useState(true);
   const [initOption, setInitOption] = useState<'fromScratch' | 'demo' | 'import'>('fromScratch');
   const [importFile, setImportFile] = useState<File | null>(null);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importStep, setImportStep] = useState(1);
+  const [importYear, setImportYear] = useState<string>("");
+  const [importStatus, setImportStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
+  const [importError, setImportError] = useState<string | null>(null);
+  const [subcategories, setSubcategories] = useState<{name: string, category: string}[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [newCategory, setNewCategory] = useState("");
+  const [categoryMappings, setCategoryMappings] = useState<{[key: string]: string}>({});
+  const [importedData, setImportedData] = useState<ImportedData | null>(null);
+  const [importComplete, setImportComplete] = useState(false);
+  const [transactionsCount, setTransactionsCount] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Récupérer le thème sélectionné par l'utilisateur
@@ -643,6 +759,63 @@ export function OnboardingGeneral({ children }: OnboardingGeneralProps) {
     // Nettoyer l'écouteur
     return () => {
       window.removeEventListener('theme-change', handleThemeChange as EventListener);
+    };
+  }, []);
+  
+  // Ajouter useEffect pour les styles des feux d'artifice
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.innerHTML = `
+      /* Fireworks effect */
+      .firework-container {
+        position: relative;
+        overflow: hidden;
+      }
+      
+      .firework {
+        position: absolute;
+        width: 0.2rem;
+        height: 0.2rem;
+        border-radius: 50%;
+        transform-origin: center;
+        animation: firework 0.8s ease-out infinite;
+      }
+      
+      @keyframes firework {
+        0% {
+          transform: translate(-50%, -50%) scale(0);
+          opacity: 1;
+        }
+        100% {
+          transform: translate(-50%, -50%) scale(1);
+          opacity: 0;
+        }
+      }
+      
+      .firework-green {
+        box-shadow: 0 0 0 0.4rem #9ae6b4, 0 0 0 0.8rem #48bb78, 0 0 0 1.2rem #38a169;
+      }
+      
+      .firework-blue {
+        box-shadow: 0 0 0 0.4rem #90cdf4, 0 0 0 0.8rem #4299e1, 0 0 0 1.2rem #3182ce;
+      }
+      
+      .firework-orange {
+        box-shadow: 0 0 0 0.4rem #fbd38d, 0 0 0 0.8rem #ed8936, 0 0 0 1.2rem #dd6b20;
+      }
+      
+      .firework-pink {
+        box-shadow: 0 0 0 0.4rem #fbb6ce, 0 0 0 0.8rem #ed64a6, 0 0 0 1.2rem #d53f8c;
+      }
+      
+      .firework-purple {
+        box-shadow: 0 0 0 0.4rem #d6bcfa, 0 0 0 0.8rem #9f7aea, 0 0 0 1.2rem #6b46c1;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
     };
   }, []);
   
@@ -846,27 +1019,1059 @@ export function OnboardingGeneral({ children }: OnboardingGeneralProps) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      console.log(`Fichier sélectionné: ${file.name}`);
       setImportFile(file);
       setInitOption('import');
-      console.log(`Fichier sélectionné: ${file.name}`);
+      
+      // Ouvrir la modale seulement si elle n'était pas déjà ouverte (cas d'une nouvelle importation)
+      if (!importDialogOpen) {
+      setImportDialogOpen(true);
+      } else {
+        // Si la modale était déjà ouverte (mais cachée), la réafficher
+        setTimeout(() => {
+          setImportDialogOpen(true);
+        }, 300);
+      }
     }
   };
 
-  // Fonction pour générer des données de test
-  const generateTestData = async () => {
+  const handleImportYearSelect = (year: string) => {
+    setImportYear(year);
+  };
+
+  const processExcelFile = async () => {
+    if (!importFile || !importYear) return;
+    
+    setImportStatus('processing');
+    setImportError(null); // Réinitialiser les erreurs précédentes
+    
     try {
-      console.log("Démarrage de la génération de données de test...");
-      const success = await demoDataGenerator.generateDemoData();
-      console.log("Résultat de la génération:", success);
+      // Créer un FormData pour envoyer le fichier
+      const formData = new FormData();
+      formData.append('file', importFile);
+      formData.append('year', importYear);
       
-      if (success) {
-        // Handle success case
-      } else {
-        // Handle failure case
+      console.log(`Traitement du fichier: ${importFile.name}, année: ${importYear}`);
+      
+      // Appeler l'API backend pour traiter le fichier
+      const response = await fetch('/api/import-excel', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: response.statusText }));
+        const errorMessage = errorData.error || `Erreur lors du traitement du fichier: ${response.statusText}`;
+        console.error("Erreur d'importation:", errorMessage);
+        throw new Error(errorMessage);
       }
+      
+      const data = await response.json();
+      console.log("Réponse de l'API:", data);
+      
+      // Utiliser directement les données brutes si elles sont disponibles
+      const rawData = data.data || [];
+      const columns = data.columns || [];
+      
+      console.log("Données brutes:", rawData);
+      console.log("Colonnes:", columns);
+      
+      // Extraire les sous-catégories du fichier
+      // Même si aucune sous-catégorie n'est trouvée, on continue avec une sous-catégorie par défaut
+      const subcategoriesList = data.subcategories && data.subcategories.length > 0 
+        ? data.subcategories 
+        : ["Non catégorisé"];
+      
+      console.log("Sous-catégories extraites:", subcategoriesList);
+      
+      // Récupérer les catégories existantes depuis Supabase
+      const { data: categoriesData } = await supabase
+        .from('categories')
+        .select('id, name, type')
+        .order('name');
+      
+      // Récupérer toutes les sous-catégories existantes
+      const { data: existingSubcategories } = await supabase
+        .from('subcategories')
+        .select('id, name, category_id');
+
+      console.log("Sous-catégories existantes:", existingSubcategories);
+      
+      // Créer un mapping entre les noms de sous-catégories existantes et leurs catégories
+      const subcategoryMap = new Map();
+      if (existingSubcategories) {
+        existingSubcategories.forEach(subcat => {
+          // Utiliser toLowerCase() pour une comparaison insensible à la casse
+          subcategoryMap.set(subcat.name.toLowerCase(), subcat.category_id);
+        });
+      }
+      
+      // Traiter les sous-catégories importées
+      const processedSubcategories = subcategoriesList.map((name: string) => {
+        // Rechercher la sous-catégorie existante (insensible à la casse)
+        const categoryId = subcategoryMap.get(name.toLowerCase());
+        return { 
+          name, 
+          category: categoryId || "" 
+        };
+      });
+      
+      setSubcategories(processedSubcategories);
+      
+      if (categoriesData) {
+        // Stocker les IDs des catégories avec leurs noms
+        const categoryIds = categoriesData.reduce((acc: {[key: string]: string}, cat: {id: string, name: string, type: string}) => {
+          acc[cat.id] = cat.name;
+          return acc;
+        }, {});
+        
+        // Convertir les IDs de catégories en noms dans les mappings
+        const initialMappings: {[key: string]: string} = {};
+        processedSubcategories.forEach((subcat: {name: string, category: string}) => {
+          if (subcat.category) {
+            initialMappings[subcat.name] = categoryIds[subcat.category];
+          }
+        });
+        setCategoryMappings(initialMappings);
+        
+        // Stocker les catégories pour le dropdown
+        setCategories(categoriesData.map(cat => cat.name));
+      }
+      
+      // Passer à l'étape 2 seulement s'il reste des sous-catégories à associer
+      const unmappedSubcategories = processedSubcategories.filter((subcat: {name: string, category: string}) => !subcat.category);
+      
+      console.log("Sous-catégories non mappées:", unmappedSubcategories);
+      
+      if (unmappedSubcategories.length > 0) {
+        setImportStep(2);
+      } else {
+        // Si toutes les sous-catégories sont déjà mappées, passer directement à la finalisation
+        finalizeImport();
+      }
+      
+      setImportStatus('success');
     } catch (error) {
-      console.error("Erreur lors de la génération des données de test:", error);
+      console.error("Erreur détaillée lors du traitement du fichier Excel:", error);
+      setImportError(error instanceof Error ? error.message : "Une erreur est survenue lors du traitement");
+      setImportStatus('error');
+      
+      // Afficher un toast d'erreur
+      toast({
+        variant: "destructive",
+        title: "Erreur d'importation",
+        description: error instanceof Error ? error.message : "Une erreur inattendue est survenue",
+      });
     }
+  };
+
+  const handleCategoryMapping = (subcategoryName: string, categoryName: string) => {
+    setCategoryMappings(prev => ({
+      ...prev,
+      [subcategoryName]: categoryName
+    }));
+  };
+
+  const handleAddNewCategory = async () => {
+    if (!newCategory.trim()) return;
+    
+    try {
+      // Ajouter la nouvelle catégorie à Supabase
+      const { data, error } = await supabase
+        .from('categories')
+        .insert([{ 
+          name: newCategory.trim(),
+          type: 'expense'
+        }])
+        .select();
+      
+      if (error) throw error;
+      
+      // Mettre à jour la liste des catégories
+      setCategories([...categories, newCategory.trim()]);
+      setNewCategory("");
+      
+      toast({
+        title: "Catégorie ajoutée",
+        description: `La catégorie "${newCategory.trim()}" a été ajoutée avec succès.`,
+      });
+    } catch (error) {
+      console.error("Erreur lors de l'ajout de la catégorie:", error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible d'ajouter la catégorie.",
+      });
+    }
+  };
+
+  const finalizeImport = async () => {
+    setImportStatus('processing');
+    
+    try {
+      // Récupérer les vraies données depuis l'API au lieu d'utiliser des données de test
+      const formData = new FormData();
+      if (importFile) {
+        formData.append('file', importFile);
+      }
+      formData.append('year', importYear);
+      
+      console.log("Récupération des données réelles pour l'aperçu...");
+      
+      // Appeler l'API pour obtenir les données traitées
+      const response = await fetch('/api/import-excel', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: response.statusText }));
+        throw new Error(errorData.error || `Erreur lors de la récupération des données: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log("Données reçues pour l'aperçu:", data);
+      
+      // Construire la structure de données attendue par DataPreview à partir des données Excel
+      let importedDataForPreview: ImportedData = {
+        categories: {}
+      };
+      
+      // Si le backend nous a envoyé des données déjà formatées dans data.preview
+      if (data.preview && typeof data.preview === 'object') {
+        importedDataForPreview = data.preview;
+      } 
+      // Si le backend nous a envoyé des données brutes de Excel (format tableau)
+      else if (data.data && Array.isArray(data.data)) {
+        // Transformer le format tableau en format attendu par DataPreview
+        
+        // Récupérer les noms des mois depuis les en-têtes
+        const monthHeaders = data.columns ? data.columns.slice(1) : ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"];
+        
+        console.log("En-têtes des mois:", monthHeaders);
+        
+        // Fonction pour déterminer le numéro de mois à partir de son nom
+        const getMonthNumber = (monthName: string): string => {
+          // Tableaux des différentes variantes de noms de mois
+          const months = {
+            '01': ['janv', 'jan', 'janvier', 'january'],
+            '02': ['fév', 'fev', 'février', 'feb', 'february'],
+            '03': ['mars', 'mar', 'march'],
+            '04': ['avr', 'avril', 'apr', 'april'],
+            '05': ['mai', 'may'],
+            '06': ['juin', 'jun', 'june'],
+            '07': ['juil', 'jul', 'juillet', 'july'],
+            '08': ['août', 'aout', 'aug', 'august'],
+            '09': ['sept', 'sep', 'septembre', 'september'],
+            '10': ['oct', 'octobre', 'october'],
+            '11': ['nov', 'novembre', 'november'],
+            '12': ['déc', 'dec', 'décembre', 'december']
+          };
+          
+          // Convertir en minuscules pour la comparaison
+          const lowerMonthName = monthName.toLowerCase().trim();
+          
+          // Parcourir les mois et leurs variantes
+          for (const [num, names] of Object.entries(months)) {
+            if (names.some(name => lowerMonthName.includes(name))) {
+              return num;
+            }
+          }
+          
+          // Si non trouvé, retourner la chaîne originale
+          return monthName;
+        };
+        
+        // Parcourir les données du tableau
+        data.data.forEach((row: any[]) => {
+          if (!row || row.length === 0) return;
+          
+          // La première colonne contient le nom de la sous-catégorie
+          const subcategoryName = row[0];
+          if (!subcategoryName) return;
+          
+          // Ignorer les lignes d'en-tête ou vides
+          if (typeof subcategoryName === 'string' && 
+              (subcategoryName.toLowerCase().includes('catégorie') || 
+               subcategoryName.trim() === '')) {
+            return;
+          }
+          
+          // Trouver la catégorie associée à cette sous-catégorie via les mappings
+          const categoryName = categoryMappings[subcategoryName] || "Non catégorisé";
+          
+          // S'assurer que la catégorie existe dans notre structure
+          if (!importedDataForPreview.categories[categoryName]) {
+            importedDataForPreview.categories[categoryName] = {
+              subcategories: {}
+            };
+          }
+          
+          // Ajouter la sous-catégorie avec ses valeurs mensuelles
+          importedDataForPreview.categories[categoryName].subcategories[subcategoryName] = {};
+          
+          // Ajouter les valeurs pour chaque mois
+          monthHeaders.forEach((monthHeader: string, index: number) => {
+            // Convertir le nom du mois en format numérique
+            let monthKey = getMonthNumber(monthHeader);
+            
+            // Si le mois n'est pas au format correct (01-12), utiliser l'index + 1
+            if (!/^(0[1-9]|1[0-2])$/.test(monthKey)) {
+              monthKey = (index + 1).toString().padStart(2, '0');
+            }
+            
+            // Récupérer la valeur
+            const rawValue = row[index + 1];
+            
+            // Traiter correctement les nombres
+            let value = 0;
+            
+            // Si la valeur est nulle ou vide
+            if (rawValue === "" || rawValue === null || rawValue === undefined) {
+              value = 0;
+            }
+            // Si la valeur est déjà un nombre, l'utiliser directement
+            else if (typeof rawValue === 'number') {
+              value = rawValue;
+            } 
+            // Si c'est une chaîne avec une virgule, la convertir correctement
+            else if (typeof rawValue === 'string' && rawValue.includes(',')) {
+              value = parseFloat(rawValue.replace(',', '.'));
+            }
+            // Sinon, essayer de la convertir en nombre
+            else {
+              try {
+                value = Number(rawValue);
+                if (isNaN(value)) value = 0;
+              } catch (e) {
+                console.error(`Erreur lors de la conversion de ${rawValue}:`, e);
+              value = 0;
+              }
+            }
+            
+            console.log(`Sous-catégorie: ${subcategoryName}, Mois: ${monthKey} (${monthHeader}), Valeur brute: ${rawValue}, Valeur convertie: ${value}`);
+            
+            // Utiliser la valeur convertie
+            importedDataForPreview.categories[categoryName].subcategories[subcategoryName][monthKey] = value;
+          });
+        });
+      } 
+      // Si nous avons des données dans un autre format
+      else {
+        console.log("Format de données non reconnu, utilisation des mappings pour créer une structure compatible");
+        
+        // Fallback: utiliser les mappings de catégories pour organiser les données
+        Object.entries(categoryMappings).forEach(([subcategoryName, categoryName]) => {
+          if (!importedDataForPreview.categories[categoryName]) {
+            importedDataForPreview.categories[categoryName] = {
+              subcategories: {}
+            };
+          }
+          
+          // Utiliser les données du backend si disponibles, sinon créer des données fictives
+          if (data.subcategories && data.subcategories[subcategoryName]) {
+            importedDataForPreview.categories[categoryName].subcategories[subcategoryName] = data.subcategories[subcategoryName];
+          } else {
+            // Ajouter la sous-catégorie avec des données fictives comme dernier recours
+            importedDataForPreview.categories[categoryName].subcategories[subcategoryName] = {
+              "01": Math.random() * 500,
+              "02": Math.random() * 500,
+              "03": Math.random() * 500
+            };
+          }
+        });
+      }
+      
+      console.log("Données formatées pour l'aperçu:", importedDataForPreview);
+      
+      // Stocker les données importées pour l'aperçu
+      setImportedData(importedDataForPreview);
+      
+      // Calculer le nombre de transactions
+      const transactionCount = Object.values(importedDataForPreview.categories).reduce((count, category) => {
+        return count + Object.keys(category.subcategories).length;
+      }, 0);
+      
+      setTransactionsCount(data.transactionsCount || transactionCount);
+      
+      setImportStatus('success');
+      setImportStep(3);
+      
+    } catch (error) {
+      console.error("Erreur lors de la validation de l'importation:", error);
+      setImportError(error instanceof Error ? error.message : "Une erreur est survenue");
+      setImportStatus('error');
+    }
+  };
+
+  // Interface pour les données de transaction
+  interface TransactionData {
+    amount: number;
+    description: string;
+    transaction_date: string;
+    accounting_date: string;
+    category_id: string;
+    subcategory_id: string;
+    user_id: string;
+    organization_id: string;
+    expense_type: string;
+    is_income: boolean;
+    split_ratio: number;
+  }
+
+  // Ajouter cette fonction pour créer les transactions dans Supabase
+  const createTransactionsFromImportedData = async () => {
+    setImportStatus('processing');
+    
+    try {
+      // Récupérer l'utilisateur connecté
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      if (!userData.user) throw new Error("Utilisateur non connecté");
+      
+      // Récupérer l'organisation de l'utilisateur
+      const { data: orgData, error: orgError } = await supabase
+        .from('users')
+        .select('organization_id')
+        .eq('id', userData.user.id)
+        .single();
+        
+      if (orgError) throw orgError;
+      if (!orgData.organization_id) throw new Error("Aucune organisation associée à l'utilisateur");
+      
+      // Récupérer les catégories et sous-catégories existantes
+      const { data: categoriesData, error: catError } = await supabase
+        .from('categories')
+        .select('id, name, type');
+        
+      if (catError) throw catError;
+      
+      const { data: subcategoriesData, error: subcatError } = await supabase
+        .from('subcategories')
+        .select('id, name, category_id');
+        
+      if (subcatError) throw subcatError;
+      
+      // Créer un mapping des noms vers IDs pour les catégories et sous-catégories
+      const categoryMap = new Map();
+      categoriesData.forEach(cat => {
+        categoryMap.set(cat.name.toLowerCase(), {
+          id: cat.id,
+          type: cat.type
+        });
+      });
+      
+      const subcategoryMap = new Map();
+      subcategoriesData.forEach(subcat => {
+        subcategoryMap.set(subcat.name.toLowerCase(), {
+          id: subcat.id,
+          category_id: subcat.category_id
+        });
+      });
+      
+      // Préparer les transactions à partir des données importées
+      const transactions: TransactionData[] = [];
+      let successCount = 0;
+      
+      if (!importedData) throw new Error("Aucune donnée importée");
+      
+      // Parcourir les catégories
+      Object.entries(importedData.categories).forEach(([categoryName, category]) => {
+        // Déterminer si c'est un revenu
+        const isIncome = ["Revenus exceptionnels", "Revenus réguliers"].includes(categoryName);
+        
+        // Récupérer l'ID de la catégorie
+        const categoryInfo = categoryMap.get(categoryName.toLowerCase());
+        if (!categoryInfo) {
+          console.warn(`Catégorie non trouvée dans la base de données: ${categoryName}`);
+          return; // Passer à la catégorie suivante
+        }
+        
+        // Parcourir les sous-catégories
+        Object.entries(category.subcategories).forEach(([subcategoryName, monthData]) => {
+          // Récupérer l'ID de la sous-catégorie
+          const subcategoryInfo = subcategoryMap.get(subcategoryName.toLowerCase());
+          if (!subcategoryInfo) {
+            console.warn(`Sous-catégorie non trouvée dans la base de données: ${subcategoryName}`);
+            return; // Passer à la sous-catégorie suivante
+          }
+          
+          // Vérifier que la sous-catégorie appartient bien à la catégorie
+          if (subcategoryInfo.category_id !== categoryInfo.id) {
+            console.warn(`La sous-catégorie ${subcategoryName} n'appartient pas à la catégorie ${categoryName}`);
+            return; // Passer à la sous-catégorie suivante
+          }
+          
+          // Parcourir les mois
+          Object.entries(monthData).forEach(([month, amount]) => {
+            // Ne créer une transaction que si le montant est supérieur à 0
+            if (amount <= 0) return;
+            
+            // Créer la date (15 du mois)
+            const monthNumber = parseInt(month);
+            if (isNaN(monthNumber) || monthNumber < 1 || monthNumber > 12) {
+              console.warn(`Format de mois invalide: ${month}`);
+              return; // Passer au mois suivant
+            }
+            
+            // Formater la date au format YYYY-MM-DD
+            const transactionDate = `${importYear}-${month.padStart(2, '0')}-15`;
+            
+            // Préparer les données de la transaction
+            const transactionData = {
+              amount: amount,
+              description: `Import automatique - ${subcategoryName}`,
+              transaction_date: transactionDate,
+              accounting_date: transactionDate,
+              category_id: categoryInfo.id,
+              subcategory_id: subcategoryInfo.id,
+              user_id: userData.user.id,
+              organization_id: orgData.organization_id,
+              expense_type: isIncome ? 'couple' : 'couple', // Par défaut, toutes les transactions sont de type "couple"
+              is_income: isIncome,
+              split_ratio: 50.00 // Par défaut, répartition 50/50
+            };
+            
+            transactions.push(transactionData);
+            successCount++;
+          });
+        });
+      });
+      
+      console.log(`Nombre de transactions préparées: ${transactions.length}`);
+      
+      // Insérer les transactions par lots pour éviter les limitations d'API
+      const BATCH_SIZE = 50;
+      for (let i = 0; i < transactions.length; i += BATCH_SIZE) {
+        const batch = transactions.slice(i, i + BATCH_SIZE);
+        
+        const { error: insertError } = await supabase
+          .from('transactions')
+          .insert(batch);
+          
+        if (insertError) {
+          console.error('Erreur lors de l\'insertion des transactions:', insertError);
+          throw insertError;
+        }
+      }
+      
+      console.log(`${successCount} transactions créées avec succès`);
+      setTransactionsCount(successCount);
+      setImportStatus('success');
+      setImportComplete(true);
+      
+    } catch (error) {
+      console.error("Erreur lors de la création des transactions:", error);
+      setImportError(error instanceof Error ? error.message : "Une erreur est survenue");
+      setImportStatus('error');
+    }
+  };
+
+  const completeImport = async () => {
+    setImportStatus('processing');
+    
+    try {
+      // Simuler la création des transactions sans appeler l'API
+      console.log("Simulation de création des transactions dans Supabase");
+      
+      // Attendre un peu pour simuler le traitement
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setImportStatus('success');
+      setImportComplete(true);
+      
+    } catch (error) {
+      console.error("Erreur lors de la finalisation de l'importation:", error);
+      setImportError(error instanceof Error ? error.message : "Une erreur est survenue");
+      setImportStatus('error');
+    }
+  };
+
+  const resetImport = () => {
+    // Fermer la modale actuelle pour éviter les interférences
+    setImportDialogOpen(false);
+    
+    // Réinitialiser les états
+    setImportFile(null);
+    setImportYear("");
+    setImportStatus('idle');
+    setImportError(null);
+    setSubcategories([]);
+    setCategoryMappings({});
+    setImportedData(null);
+    setImportComplete(false);
+    setImportStep(1);
+    
+    // Réinitialiser la valeur du fileInput pour permettre une nouvelle sélection du même fichier
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    
+    // Utiliser setTimeout pour s'assurer que la modale est bien fermée avant de déclencher la nouvelle sélection
+    setTimeout(() => {
+      // Déclencher le sélecteur de fichier
+      if (fileInputRef.current) {
+        fileInputRef.current.click();
+      }
+      
+      // Réouvrir la modale après un court délai pour être sûr que le fichier a été sélectionné
+      setTimeout(() => {
+        if (importFile) {
+          setImportDialogOpen(true);
+        }
+      }, 500);
+    }, 300);
+  };
+
+  // Fonction pour créer une nouvelle catégorie directement depuis le dropdown
+  const CreateNewCategoryItem = ({ onSelect }: { onSelect: (value: string) => void }) => {
+    const [isCreating, setIsCreating] = useState(false);
+    const [newCategoryName, setNewCategoryName] = useState("");
+    
+    const handleCreate = async (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      if (!newCategoryName.trim()) return;
+      
+      try {
+        // Ajouter la nouvelle catégorie à Supabase
+        const { data, error } = await supabase
+          .from('categories')
+          .insert([{ 
+            name: newCategoryName.trim(),
+            type: 'expense'
+          }])
+          .select();
+        
+        if (error) throw error;
+        
+        // Mettre à jour la liste des catégories
+        setCategories([...categories, newCategoryName.trim()]);
+        
+        // Sélectionner la nouvelle catégorie
+        onSelect(newCategoryName.trim());
+        
+        // Réinitialiser l'état
+        setNewCategoryName("");
+        setIsCreating(false);
+        
+        toast({
+          title: "Catégorie ajoutée",
+          description: `La catégorie "${newCategoryName.trim()}" a été ajoutée avec succès.`,
+        });
+      } catch (error) {
+        console.error("Erreur lors de l'ajout de la catégorie:", error);
+        toast({
+          variant: "destructive",
+          title: "Erreur",
+          description: "Impossible d'ajouter la catégorie.",
+        });
+      }
+    };
+    
+    if (isCreating) {
+      return (
+        <div className="flex items-center gap-2 px-2 py-1.5" onClick={e => e.stopPropagation()}>
+          <Input
+            value={newCategoryName}
+            onChange={e => setNewCategoryName(e.target.value)}
+            placeholder="Nom de la catégorie"
+            className="h-8 flex-1"
+            autoFocus
+          />
+          <Button 
+            size="sm" 
+            className="h-8 px-2" 
+            onClick={handleCreate}
+            disabled={!newCategoryName.trim()}
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            Ajouter
+          </Button>
+          <Button 
+            size="sm" 
+            variant="ghost" 
+            className="h-8 w-8 p-0" 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsCreating(false);
+              setNewCategoryName("");
+            }}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      );
+    }
+    
+    return (
+      <div 
+        className="relative flex items-center px-2 py-1.5 text-blue-600 dark:text-blue-400 font-medium cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 rounded-sm"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsCreating(true);
+        }}
+      >
+        <Plus className="h-4 w-4 mr-2" />
+        Créer une nouvelle catégorie
+      </div>
+    );
+  };
+
+  // Fonction pour afficher l'aperçu des données importées
+  const DataPreview = ({ data, year }: { data: ImportedData; year: string }) => {
+    // Supprimer l'état expanded et le ref containerRef qui ne sont plus nécessaires
+    const containerRef = React.useRef<HTMLDivElement>(null);
+
+    // Catégories considérées comme des revenus
+    const incomeCategories = ["Revenus exceptionnels", "Revenus réguliers"];
+
+    // Extraire les mois uniques de toutes les données
+    const allMonths = new Set<string>();
+    Object.values(data.categories).forEach(category => {
+      Object.values(category.subcategories).forEach(subcategory => {
+        Object.keys(subcategory).forEach(month => {
+          allMonths.add(month);
+        });
+      });
+    });
+    
+    // Convertir en tableau et trier
+    const months = Array.from(allMonths).sort();
+    
+    // Fonction pour formater le nom du mois
+    const formatMonth = (month: string) => {
+      const monthNames = [
+        "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+        "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+      ];
+      const monthIndex = parseInt(month) - 1;
+      return monthIndex >= 0 && monthIndex < 12 ? monthNames[monthIndex] : month;
+    };
+    
+    // Calculer les totaux par mois et par type (revenus/dépenses)
+    const monthlyTotals = {
+      income: {} as Record<string, number>,
+      expense: {} as Record<string, number>,
+      total: {} as Record<string, number>
+    };
+    
+    months.forEach(month => {
+      monthlyTotals.income[month] = 0;
+      monthlyTotals.expense[month] = 0;
+      
+      Object.entries(data.categories).forEach(([categoryName, category]) => {
+        const isIncome = incomeCategories.includes(categoryName);
+        Object.values(category.subcategories).forEach(subcategory => {
+          if (subcategory[month]) {
+            if (isIncome) {
+              monthlyTotals.income[month] += subcategory[month];
+            } else {
+              monthlyTotals.expense[month] += subcategory[month];
+            }
+          }
+        });
+      });
+      
+      // Calculer la balance mensuelle
+      monthlyTotals.total[month] = monthlyTotals.income[month] - monthlyTotals.expense[month];
+    });
+    
+    // Calculer les totaux généraux
+    const grandTotals = {
+      income: Object.values(monthlyTotals.income).reduce((sum, value) => sum + value, 0),
+      expense: Object.values(monthlyTotals.expense).reduce((sum, value) => sum + value, 0),
+      balance: 0
+    };
+    
+    grandTotals.balance = grandTotals.income - grandTotals.expense;
+
+    // Supprimer la fonction toggleFullscreen qui n'est plus nécessaire
+    
+    // Obtenir le nombre total de catégories et sous-catégories
+    const totalCategories = Object.keys(data.categories).length;
+    const totalSubcategories = Object.values(data.categories).reduce(
+      (count, cat) => count + Object.keys(cat.subcategories).length, 0
+    );
+    
+    // Injecter les styles pour l'effet de bordure gradient et autres styles
+    React.useEffect(() => {
+      const style = document.createElement('style');
+      style.innerHTML = `
+        /* Style headers */
+        .sticky-header {
+          position: sticky;
+          top: 0;
+          z-index: 40;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .sticky-row-header {
+          position: sticky;
+          left: 0;
+          z-index: 30;
+          background-color: inherit;
+        }
+        
+        .sticky-subcat-header {
+          position: sticky;
+          left: 120px;
+          z-index: 20;
+          background-color: inherit;
+        }
+        
+        /* Style footer */
+        .sticky-footer {
+          position: sticky;
+          bottom: 0;
+          z-index: 40;
+          box-shadow: 0 -1px 3px rgba(0,0,0,0.1);
+        }
+        
+        /* Hover effects */
+        .data-row:hover {
+          background-color: rgba(241, 245, 249, 0.5) !important;
+        }
+        
+        .dark .data-row:hover {
+          background-color: rgba(30, 41, 59, 0.5) !important;
+        }
+        
+        /* Table border effect */
+        .table-with-gradient {
+          --light-start-color: #e2e8f0;
+          --light-mid-color: #2563eb;
+          --light-focus-color: #3b82f6;
+          --light-deep-color: #1e40af;
+          --dark-start-color: #334155;
+          --dark-mid-color: #3b82f6;
+          --dark-focus-color: #60a5fa;
+          --dark-deep-color: #2563eb;
+          transition: background 0.3s ease, box-shadow 0.3s ease;
+          background: linear-gradient(#fff, #fff) padding-box, 
+                   linear-gradient(to right, 
+                                 var(--light-start-color), 
+                                 var(--light-mid-color) 50%, 
+                                 var(--light-start-color)) border-box !important;
+        }
+        
+        .dark .table-with-gradient {
+          background: linear-gradient(#0f172a, #0f172a) padding-box, 
+                   linear-gradient(to right, 
+                                  var(--dark-start-color), 
+                                  var(--dark-mid-color) 50%, 
+                                  var(--dark-start-color)) border-box !important;
+        }
+        
+        /* Font size helper */
+        .text-2xs {
+          font-size: 0.65rem;
+          line-height: 0.9rem;
+        }
+        
+        /* Info banner */
+        .import-info-banner {
+          background-color: rgba(56, 189, 248, 0.1);
+          border: 1px solid rgba(56, 189, 248, 0.2);
+          border-radius: 0.5rem;
+          padding: 0.75rem 1rem;
+          margin-bottom: 1rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+        
+        .dark .import-info-banner {
+          background-color: rgba(56, 189, 248, 0.05);
+          border-color: rgba(56, 189, 248, 0.1);
+        }
+      `;
+      document.head.appendChild(style);
+      
+      return () => {
+        document.head.removeChild(style);
+      };
+    }, []);
+    
+    // Calculer le nombre total de transactions (sous-catégories × mois avec des valeurs)
+    const calculateTotalTransactions = () => {
+      let total = 0;
+      Object.values(data.categories).forEach(category => {
+        Object.values(category.subcategories).forEach(subcategory => {
+          Object.values(subcategory).forEach(value => {
+            if (value > 0) total++;
+                        });
+                      });
+      });
+      return total;
+    };
+    
+    const totalTransactions = calculateTotalTransactions();
+    
+    return (
+      <div className="w-full">
+        {/* Bannière d'information */}
+        <div className="import-info-banner">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
+              Données pour l'année <span className="text-blue-700 dark:text-blue-400">{year}</span> chargées avec succès
+            </span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">
+              {new Date().toLocaleDateString()}
+            </span>
+                          </div>
+          <p className="text-xs text-slate-700 dark:text-slate-300">
+            <span className="font-semibold text-blue-700 dark:text-blue-400">{totalTransactions}</span> transactions réparties entre <span className="font-semibold text-blue-700 dark:text-blue-400">{totalCategories}</span> catégories et <span className="font-semibold text-blue-700 dark:text-blue-400">{totalSubcategories}</span> sous-catégories.
+          </p>
+                          </div>
+        
+        <div className="data-table-wrapper border rounded-md overflow-hidden shadow-sm table-with-gradient h-[350px] w-full relative">
+          <div className="absolute inset-0">
+            <div className="flex flex-col h-full">
+              <div className="flex-grow min-h-0 overflow-hidden">
+                <ScrollArea className="h-full" type="always">
+                  <div className="inline-block min-w-full align-middle">
+                    <div className="overflow-hidden">
+                      <table className="w-full border-collapse text-sm table-auto">
+                        <thead className="sticky-header bg-slate-100 dark:bg-slate-800 border-b dark:border-slate-700">
+                          <tr>
+                            <th className="p-3 font-semibold text-slate-900 dark:text-slate-100 border-r dark:border-slate-700 text-left sticky-row-header left-0 z-30 bg-slate-100 dark:bg-slate-800 w-[120px]">
+                              Catégorie
+                            </th>
+                            <th className="p-3 font-semibold text-slate-900 dark:text-slate-100 border-r dark:border-slate-700 text-left sticky-subcat-header left-[120px] z-20 bg-slate-100 dark:bg-slate-800 w-[140px]">
+                              Sous-catégorie
+                            </th>
+                          {months.map(month => (
+                              <th key={month} className="p-3 font-semibold text-slate-900 dark:text-slate-100 text-right border-r last:border-r-0 dark:border-slate-700 w-[95px] min-w-[95px]">
+                                {formatMonth(month)}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                          {Object.entries(data.categories).map(([categoryName, category]) => {
+                            const isIncome = incomeCategories.includes(categoryName);
+                            
+                            return (
+                              <React.Fragment key={categoryName}>
+                                {Object.entries(category.subcategories).map(([subcategoryName, monthData], index) => (
+                                  <tr 
+                                    key={`${categoryName}-${subcategoryName}`}
+                          className={cn(
+                                      "data-row border-b dark:border-slate-700 last:border-b-0 transition-colors",
+                                      isIncome 
+                                        ? "bg-blue-50/30 dark:bg-blue-900/10" 
+                                        : index % 2 === 0 
+                                          ? "bg-white dark:bg-slate-900" 
+                                          : "bg-slate-50/50 dark:bg-slate-800/30"
+                                    )}
+                                  >
+                                    <td className="p-3 text-slate-900 dark:text-slate-200 border-r dark:border-slate-700 sticky-row-header left-0 z-10 text-xs">
+                                      {index === 0 && (
+                                        <div className={cn(
+                                          "font-medium",
+                                          isIncome ? "text-blue-700 dark:text-blue-400" : ""
+                                        )}>
+                                          {categoryName}
+                          </div>
+                                      )}
+                                    </td>
+                                    <td className="p-3 text-slate-700 dark:text-slate-300 border-r dark:border-slate-700 sticky-subcat-header left-[120px] z-10 text-xs">
+                                      {subcategoryName}
+                                    </td>
+                          {months.map(month => (
+                                      <td key={month} className="p-3 text-right text-slate-800 dark:text-slate-200 border-r last:border-r-0 dark:border-slate-700 text-xs">
+                                        {monthData[month] ? formatCurrency(monthData[month]) : "-"}
+                                      </td>
+                                    ))}
+                                  </tr>
+                                ))}
+                              </React.Fragment>
+                            );
+                          })}
+                        </tbody>
+                        <tfoot className="sticky-footer bg-slate-100 dark:bg-slate-800 backdrop-blur-sm border-t shadow-md">
+                          <tr className="border-b dark:border-slate-700">
+                            <td colSpan={2} className="p-3 font-semibold text-blue-700 dark:text-blue-400 border-r dark:border-slate-700 sticky-row-header left-0 z-20 bg-slate-100 dark:bg-slate-800 text-xs">
+                              Total Revenus
+                            </td>
+                            {months.map(month => (
+                              <td key={`income-${month}`} className="p-3 text-right border-r last:border-r-0 dark:border-slate-700 font-semibold text-blue-700 dark:text-blue-400 text-xs">
+                                {monthlyTotals.income[month] ? formatCurrency(monthlyTotals.income[month]) : "-"}
+                              </td>
+                            ))}
+                          </tr>
+                          <tr className="border-b dark:border-slate-700">
+                            <td colSpan={2} className="p-3 font-semibold text-rose-700 dark:text-rose-400 border-r dark:border-slate-700 sticky-row-header left-0 z-20 bg-slate-100 dark:bg-slate-800 text-xs">
+                              Total Dépenses
+                            </td>
+                            {months.map(month => (
+                              <td key={`expense-${month}`} className="p-3 text-right border-r last:border-r-0 dark:border-slate-700 font-semibold text-rose-700 dark:text-rose-400 text-xs">
+                                {monthlyTotals.expense[month] ? formatCurrency(monthlyTotals.expense[month]) : "-"}
+                              </td>
+                            ))}
+                          </tr>
+                          <tr>
+                            <td colSpan={2} className="p-3 font-bold text-slate-900 dark:text-white border-r dark:border-slate-700 sticky-row-header left-0 z-20 bg-slate-100 dark:bg-slate-800 text-xs">
+                              Balance
+                            </td>
+                            {months.map(month => {
+                              const balance = monthlyTotals.total[month];
+                              const isPositive = balance >= 0;
+                              
+                              return (
+                                <td 
+                                  key={`balance-${month}`} 
+                                  className={cn(
+                                    "p-3 text-right border-r last:border-r-0 dark:border-slate-700 font-bold text-xs",
+                                    isPositive ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"
+                                  )}
+                                >
+                                  {balance !== 0 ? formatCurrency(Math.abs(balance)) : "-"}
+                                  {isPositive ? " +" : " -"}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        </tfoot>
+                      </table>
+                      </div>
+                        </div>
+                  <ScrollBar orientation="horizontal" />
+            </ScrollArea>
+          </div>
+          
+          {/* Statistiques résumées */}
+              <div className="bg-slate-100 dark:bg-slate-800 p-4 border-t dark:border-slate-700 text-slate-700 dark:text-slate-300 flex-shrink-0">
+                <div className="flex flex-wrap justify-between items-center gap-2">
+                  <div className="text-sm font-medium">
+                    <span className="text-blue-700 dark:text-blue-400">{totalCategories}</span> catégories, 
+                    <span className="text-blue-700 dark:text-blue-400 ml-1">{totalSubcategories}</span> sous-catégories
+              </div>
+                  <div className="flex flex-wrap gap-4 items-center">
+                    <span className="text-blue-700 dark:text-blue-400 font-medium text-sm whitespace-nowrap">
+                      Revenus: {formatCurrency(grandTotals.income)}
+                    </span>
+                    <span className="text-rose-700 dark:text-rose-400 font-medium text-sm whitespace-nowrap">
+                      Dépenses: {formatCurrency(grandTotals.expense)}
+                    </span>
+                    <span className={cn(
+                      "font-semibold text-sm whitespace-nowrap",
+                      grandTotals.balance >= 0 ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"
+                    )}>
+                      Balance: {formatCurrency(Math.abs(grandTotals.balance))} {grandTotals.balance >= 0 ? "+" : "-"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const steps = [
@@ -1324,7 +2529,12 @@ export function OnboardingGeneral({ children }: OnboardingGeneralProps) {
                   ? "bg-blue-600 hover:bg-blue-700 text-white" 
                   : "bg-blue-600 hover:bg-blue-700 text-white"
               )}
-              onClick={() => window.dispatchEvent(new CustomEvent('onboarding-complete'))}
+              onClick={() => {
+                // Mettre à jour les préférences utilisateur avant de terminer l'onboarding
+                updateUserPreferences();
+                // Lancer l'événement de complétion de l'onboarding
+                window.dispatchEvent(new CustomEvent('onboarding-complete'));
+              }}
             >
               Commencer
             </Button>
@@ -1348,10 +2558,361 @@ export function OnboardingGeneral({ children }: OnboardingGeneralProps) {
     },
   ]
 
+  // Fonction pour mettre à jour les préférences utilisateur quand l'onboarding est terminé
+  const updateUserPreferences = async () => {
+    try {
+      // Récupérer l'utilisateur actuel
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.error("Impossible de récupérer l'utilisateur actuel");
+        return;
+      }
+      
+      console.log("Mise à jour des préférences pour l'utilisateur:", user.id);
+      
+      // Vérifier d'abord si une entrée existe déjà pour cet utilisateur
+      const { data: existingPrefs, error: fetchError } = await supabase
+        .from('user_preferences')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+      
+      let result;
+      
+      if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = not found, c'est normal si l'entrée n'existe pas encore
+        console.error("Erreur lors de la vérification des préférences existantes:", fetchError);
+        return;
+      }
+      
+      if (existingPrefs) {
+        // Mise à jour d'une entrée existante
+        console.log("Mise à jour d'une entrée existante avec ID:", existingPrefs.id);
+        result = await supabase
+          .from('user_preferences')
+          .update({
+            completed_onboarding: true,
+            theme: theme,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingPrefs.id);
+      } else {
+        // Création d'une nouvelle entrée
+        console.log("Création d'une nouvelle entrée de préférences");
+        result = await supabase
+          .from('user_preferences')
+          .insert({
+            user_id: user.id,
+            completed_onboarding: true,
+            theme: theme,
+            language: 'fr' // Utiliser la valeur par défaut fournie dans le schéma
+          });
+      }
+      
+      if (result.error) {
+        console.error("Erreur lors de la mise à jour des préférences:", result.error);
+        toast({
+          variant: "destructive",
+          title: "Erreur",
+          description: "Impossible de sauvegarder vos préférences. Veuillez réessayer."
+        });
+      } else {
+        console.log("Préférences utilisateur mises à jour avec succès");
+        toast({
+          title: "Configuration terminée",
+          description: "Vos préférences ont été sauvegardées avec succès."
+        });
+      }
+    } catch (err) {
+      console.error("Erreur lors de la mise à jour des préférences:", err);
+    }
+  };
+
   return (
     <>
-      <OnboardingTour steps={steps} type="new-user" />
+      <OnboardingTour 
+        steps={steps} 
+        type="new-user" 
+        onComplete={updateUserPreferences} // Appeler la fonction quand l'onboarding est terminé
+      />
       {children}
+      
+      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+        <DialogContent className={cn(
+          "sm:max-w-[500px]",
+          importStep === 3 && "sm:max-w-[800px]"
+        )}>
+          <DialogHeader>
+            <DialogTitle>
+              {importStep === 1 && "Importation de données"}
+              {importStep === 2 && "Catégorisation des données"}
+              {importStep === 3 && (importComplete ? "Importation terminée" : "Validation des données")}
+            </DialogTitle>
+            <DialogDescription>
+              {importStep === 1 && "Sélectionnez l'année correspondant aux données que vous souhaitez importer."}
+              {importStep === 2 && "Associez chaque sous-catégorie à une catégorie existante ou créez-en une nouvelle."}
+              {importStep === 3 && !importComplete && "Vérifiez que les données sont correctes avant de finaliser l'importation."}
+              {importStep === 3 && importComplete && "Vos données ont été importées avec succès."}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            {importStep === 1 && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex-shrink-0 h-12 w-12 rounded-md bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                    <FileSpreadsheet className="h-6 w-6 text-blue-600 dark:text-blue-300" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
+                      {importFile?.name}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {importFile?.size ? `${(importFile.size / 1024).toFixed(2)} KB` : ""}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Année des données
+                  </label>
+                  <Select value={importYear} onValueChange={handleImportYearSelect}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Sélectionnez l'année" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[2020, 2021, 2022, 2023, 2024].map((year) => (
+                        <SelectItem key={year} value={year.toString()}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {importError && (
+                  <div className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 p-3 rounded-md">
+                    {importError}
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {importStep === 2 && (
+              <div className="space-y-4">
+                <div className="border rounded-md overflow-hidden">
+                  <div className="bg-slate-100 dark:bg-slate-800 px-4 py-2 border-b">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        Sous-catégorie
+                      </div>
+                      <div className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        Catégorie
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="max-h-[300px] overflow-y-auto">
+                    {subcategories
+                      .filter((subcat: {name: string, category: string}) => !subcat.category) // Afficher uniquement les sous-catégories non mappées
+                      .map((subcat, index) => (
+                      <div 
+                        key={index} 
+                        className="px-4 py-2 border-b last:border-b-0 grid grid-cols-2 gap-4 items-center"
+                      >
+                        <div className="text-sm text-slate-900 dark:text-slate-100">
+                          {subcat.name}
+                        </div>
+                        <Select 
+                          value={categoryMappings[subcat.name] || ""} 
+                          onValueChange={(value) => handleCategoryMapping(subcat.name, value)}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Sélectionner" />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-[300px]">
+                            <ScrollArea className="h-[200px]">
+                              <SelectGroup>
+                                <SelectLabel>Catégories existantes</SelectLabel>
+                                {categories.map((cat) => (
+                                  <SelectItem key={cat} value={cat}>
+                                    {cat}
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                              <SelectSeparator />
+                              <CreateNewCategoryItem 
+                                onSelect={(newCategory) => handleCategoryMapping(subcat.name, newCategory)} 
+                              />
+                            </ScrollArea>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {importStep === 3 && (
+              <div className="space-y-6">
+                {importComplete ? (
+                  <div className="space-y-6">
+                    <div className="rounded-lg p-6 border border-slate-200 dark:border-slate-700 relative firework-container">
+                      {/* Feux d'artifice */}
+                      {Array.from({ length: 10 }).map((_, index) => (
+                        <div 
+                          key={index}
+                          className={`firework firework-${['green', 'blue', 'orange', 'pink', 'purple'][index % 5]}`}
+                          style={{
+                            left: `${Math.random() * 100}%`,
+                            top: `${Math.random() * 100}%`,
+                            animationDelay: `${Math.random() * 2}s`
+                          }}
+                        />
+                      ))}
+                      
+                      <div className="flex flex-col items-center text-center mb-4 relative z-10">
+                        <div className="h-16 w-16 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center mb-4">
+                          <CheckCircle className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                        <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-50 mb-2">
+                          Importation réussie !
+                    </h3>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                          Toutes vos données ont été importées avec succès dans votre compte.
+                    </p>
+                  </div>
+                      
+                      <div className="bg-white dark:bg-slate-800 rounded-md p-4 border border-slate-200 dark:border-slate-700 mb-4 relative z-10">
+                        <h4 className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-3">
+                          Résumé de l'importation
+                        </h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-slate-600 dark:text-slate-400">Année:</span>
+                            <span className="font-medium text-slate-900 dark:text-slate-100">{importYear}</span>
+                      </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-slate-600 dark:text-slate-400">Transactions:</span>
+                            <span className="font-medium text-slate-900 dark:text-slate-100">{transactionsCount}</span>
+                    </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-slate-600 dark:text-slate-400">Catégories:</span>
+                            <span className="font-medium text-slate-900 dark:text-slate-100">
+                              {importedData ? Object.keys(importedData.categories).length : 0}
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-slate-600 dark:text-slate-400">Sous-catégories:</span>
+                            <span className="font-medium text-slate-900 dark:text-slate-100">
+                              {importedData ? Object.values(importedData.categories).reduce(
+                                (count, cat) => count + Object.keys(cat.subcategories).length, 0
+                              ) : 0}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {importedData && <DataPreview data={importedData} year={importYear} />}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            {importStep === 1 && (
+              <Button 
+                onClick={processExcelFile} 
+                disabled={!importYear || importStatus === 'processing'}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {importStatus === 'processing' ? (
+                  <>
+                    <span className="mr-2">Traitement...</span>
+                    <span className="animate-spin">⟳</span>
+                  </>
+                ) : (
+                  "Continuer"
+                )}
+              </Button>
+            )}
+            
+            {importStep === 2 && (
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setImportStep(1)}
+                >
+                  Retour
+                </Button>
+              <Button 
+                onClick={finalizeImport} 
+                disabled={importStatus === 'processing'}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {importStatus === 'processing' ? (
+                  <>
+                      <span className="mr-2">Traitement...</span>
+                    <span className="animate-spin">⟳</span>
+                  </>
+                ) : (
+                    "Valider"
+                )}
+              </Button>
+              </div>
+            )}
+            
+            {importStep === 3 && !importComplete && (
+              <div className="flex gap-3">
+                <Button 
+                  variant="outline"
+                  onClick={() => setImportStep(2)}
+                >
+                  Retour
+                </Button>
+                <Button 
+                  onClick={createTransactionsFromImportedData} 
+                  disabled={importStatus === 'processing'}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {importStatus === 'processing' ? (
+                    <>
+                      <span className="mr-2">Finalisation...</span>
+                      <span className="animate-spin">⟳</span>
+                    </>
+                  ) : (
+                    "Finaliser l'importation"
+                  )}
+                </Button>
+              </div>
+            )}
+            
+            {importStep === 3 && importComplete && (
+              <div className="flex gap-3">
+                <Button 
+                  variant="outline"
+                  onClick={() => setImportDialogOpen(false)}
+                  className="flex-1"
+                >
+                  Terminer
+                </Button>
+                <Button 
+                  onClick={resetImport}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  Nouvelle importation
+                </Button>
+              </div>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 } 

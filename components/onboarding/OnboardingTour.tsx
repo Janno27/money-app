@@ -24,9 +24,10 @@ interface OnboardingTourProps {
     content: React.ReactNode
     showBackButton?: boolean
   }[]
+  onComplete?: () => void
 }
 
-export function OnboardingTour({ type = 'new-user', steps }: OnboardingTourProps) {
+export function OnboardingTour({ type = 'new-user', steps, onComplete }: OnboardingTourProps) {
   const {
     isOnboardingActive,
     currentStep,
@@ -54,13 +55,14 @@ export function OnboardingTour({ type = 'new-user', steps }: OnboardingTourProps
     window.addEventListener('onboarding-next-step', handleNextStep);
     
     const handleCompleteOnboarding = () => {
-      // Déclencher l'animation de fermeture
       setIsClosing(true);
       
-      // Attendre que l'animation se termine avant de fermer complètement
       setTimeout(() => {
         completeOnboarding();
-      }, 800); // Durée de l'animation
+        if (onComplete) {
+          onComplete();
+        }
+      }, 400);
     };
     window.addEventListener('onboarding-complete', handleCompleteOnboarding);
     
@@ -68,7 +70,7 @@ export function OnboardingTour({ type = 'new-user', steps }: OnboardingTourProps
       window.removeEventListener('onboarding-next-step', handleNextStep);
       window.removeEventListener('onboarding-complete', handleCompleteOnboarding);
     };
-  }, [nextStep, completeOnboarding]);
+  }, [nextStep, completeOnboarding, onComplete]);
   
   // Effet de déplacement du gradient subtil
   useEffect(() => {

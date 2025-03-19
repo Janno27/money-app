@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
 import { EvolutionSummary } from "@/components/@components/evolution/EvolutionSummary"
 import { EvolutionChart } from "@/components/@components/evolution/EvolutionChart"
@@ -14,7 +13,7 @@ import { EvolutionDistribution } from "@/components/@components/evolution/Evolut
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, ArrowRight } from "lucide-react"
 
 interface MonthlyData {
   month: string
@@ -109,8 +108,8 @@ export default function EvolutionPage() {
 
         <div className="px-6 pb-4 mt-4">
           <div className="space-y-1">
-            <h1 className="text-2xl font-medium tracking-tight text-slate-700">Évolution</h1>
-            <p className="text-md text-slate-600">
+            <h1 className="text-2xl font-medium tracking-tight text-slate-700 dark:text-slate-100">Évolution</h1>
+            <p className="text-md text-slate-600 dark:text-slate-300">
               Analysez l'évolution de vos finances dans le temps
             </p>
           </div>
@@ -119,75 +118,89 @@ export default function EvolutionPage() {
 
       {/* Contenu principal avec hauteur fixe */}
       <div className="flex-1 overflow-hidden">
-        <Tabs defaultValue="actuel" className="h-full flex flex-col">
-          <div className="flex-none px-6">
-            <TabsList>
-              <TabsTrigger value="actuel">Actuel</TabsTrigger>
-              <TabsTrigger value="planifie">Planifié</TabsTrigger>
-            </TabsList>
+        <div className="h-full flex flex-col overflow-hidden">
+          {/* Résumé de l'évolution - hauteur fixe */}
+          <div className="flex-none">
+            <EvolutionSummary 
+              onYearChange={handleYearChange} 
+              selectedYear={selectedYear}
+            />
           </div>
-
-          <TabsContent value="actuel" className="h-[calc(100%-40px)] flex flex-col overflow-hidden">
-            {/* Résumé de l'évolution - hauteur fixe */}
-            <div className="flex-none">
-              <EvolutionSummary 
-                onYearChange={handleYearChange} 
-                selectedYear={selectedYear}
-              />
-            </div>
-            
-            {/* Conteneur avec hauteur fixe pour les graphiques */}
-            <div className="flex-1 overflow-hidden px-6 min-h-0 mb-6" style={{ maxHeight: "calc(100vh - 350px)" }}>
-              <div className="flex h-full gap-6">
-                <div className="w-[60%] flex flex-col h-full">
-                  <div className="flex-none pt-6 pb-2">
-                    <div className="space-y-1">
-                      <h3 className="font-semibold">Évolution Financière</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Vue détaillée de vos finances sur l'année {selectedYear}
-                      </p>
+          
+          {/* Conteneur avec hauteur fixe pour les graphiques */}
+          <div className="flex-1 overflow-hidden px-6 min-h-0 mb-8">
+            <div className="flex h-full gap-6">
+              <div className="w-[60%] flex flex-col h-full">
+                <div className="flex-none pt-6 pb-2">
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-medium tracking-tight text-slate-700 dark:text-slate-100">Évolution Financière</h3>
+                      
+                      {/* CTA */}
+                      <Button 
+                        variant="link" 
+                        className="text-blue-500 flex items-center gap-1 hover:gap-2 transition-all text-xs p-0 dark:text-blue-400 dark:hover:text-blue-300"
+                        onClick={() => router.push('/dashboard/planner')}
+                      >
+                        Voir les prévisions
+                        <ArrowRight className="h-3 w-3" />
+                      </Button>
                     </div>
-                  </div>
-                  {/* Conteneur fixe pour les graphiques */}
-                  <div className="flex-1 h-full">
-                    <EvolutionChart data={data} isLoading={isLoading} />
-                  </div>
-                </div>
-                
-                <div className="w-[40%] flex flex-col h-full">
-                  <div className="flex-none pt-6 pb-2">
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-semibold">Distribution</h3>
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-slate-600 dark:text-slate-300">
+                        Vue détaillée de vos finances sur l'année {new Date().getFullYear().toString()}
+                      </p>
+                      
+                      {/* Légende */}
+                      <div className="flex items-center gap-6">
                         <div className="flex items-center gap-2">
-                          <Label htmlFor="show-subcategories" className="text-xs text-muted-foreground">
-                            Toutes les sous-catégories
-                          </Label>
-                          <Switch
-                            id="show-subcategories"
-                            checked={showAllSubcategories}
-                            onCheckedChange={setShowAllSubcategories}
-                          />
+                          <div className="w-3 h-3 rounded-full bg-[#818cf8]"></div>
+                          <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Dépenses</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full bg-[#60a5fa]"></div>
+                          <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Revenus</span>
                         </div>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        Répartition des dépenses et revenus par catégorie
-                      </p>
                     </div>
                   </div>
-                  {/* Conteneur fixe pour la distribution */}
-                  <div className="flex-1 overflow-hidden">
-                    <EvolutionDistribution showAllSubcategories={showAllSubcategories} />
+                </div>
+                {/* Conteneur fixe pour les graphiques */}
+                <div className="flex-1 h-full flex flex-col">
+                  <EvolutionChart data={data} isLoading={isLoading} comparisonData={comparisonData} isDashboard={false} />
+                </div>
+              </div>
+              
+              <div className="w-[40%] flex flex-col h-full">
+                <div className="flex-none pt-6 pb-2">
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-medium tracking-tight text-slate-700 dark:text-slate-100">Distribution</h3>
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor="show-subcategories" className="text-xs text-slate-600 dark:text-slate-300">
+                          Toutes les sous-catégories
+                        </Label>
+                        <Switch
+                          id="show-subcategories"
+                          checked={showAllSubcategories}
+                          onCheckedChange={setShowAllSubcategories}
+                          className="data-[state=checked]:bg-blue-500 dark:data-[state=checked]:bg-blue-600"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-sm text-slate-600 dark:text-slate-300">
+                      Répartition des dépenses et revenus par catégorie
+                    </p>
                   </div>
+                </div>
+                {/* Conteneur fixe pour la distribution */}
+                <div className="flex-1 overflow-hidden">
+                  <EvolutionDistribution showAllSubcategories={showAllSubcategories} />
                 </div>
               </div>
             </div>
-          </TabsContent>
-
-          <TabsContent value="planifie" className="flex-1">
-            {/* Contenu de l'onglet Planifié */}
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
       </div>
     </div>
   )
