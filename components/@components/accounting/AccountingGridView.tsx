@@ -79,7 +79,22 @@ declare module '@tanstack/react-table' {
   }
 }
 
-export const AccountingGridView = React.forwardRef<
+// Définir le type pour les sous-catégories
+interface SubcategoryData {
+  id: string;
+  name: string;
+  yearlyData: {
+    [year: string]: {
+      total: number;
+      monthlyData: {
+        [month: string]: number;
+      };
+    };
+  };
+}
+
+// Ajouter le displayName au composant forwardRef
+const AccountingGridView = React.forwardRef<
   { fetchData: () => void; toggleAllCategories: () => void },
   AccountingGridViewProps
 >(({ 
@@ -186,16 +201,7 @@ export const AccountingGridView = React.forwardRef<
             monthlyData: {[month: string]: number}
           }
         },
-        subcategories: Map<string, {
-          id: string,
-          name: string,
-          yearlyData: {
-            [year: string]: {
-              total: number,
-              monthlyData: {[month: string]: number}
-            }
-          }
-        }>
+        subcategories: Map<string, SubcategoryData>
       }>()
 
       // Initialiser les totaux par année
@@ -232,7 +238,7 @@ export const AccountingGridView = React.forwardRef<
                   monthlyData: {[month: string]: number}
                 }
               },
-              subcategories: Map<string, any>
+              subcategories: Map<string, SubcategoryData>
             } = {
             id: categoryId,
               name: categoryName,
@@ -357,7 +363,7 @@ export const AccountingGridView = React.forwardRef<
 
   React.useEffect(() => {
     fetchData()
-  }, [isIncome, dateRange, searchQuery])
+  }, [dateRange, searchQuery, isIncome])
 
   // Expose methods via ref
   React.useImperativeHandle(ref, () => ({
@@ -681,7 +687,7 @@ export const AccountingGridView = React.forwardRef<
     }
   }
 
-  const columns = React.useMemo<ColumnDef<CategoryData>[]>(() => {
+  const columns = React.useMemo(() => {
     // Création des colonnes de base
     const baseColumns: ColumnDef<CategoryData>[] = [
       {
@@ -740,12 +746,12 @@ export const AccountingGridView = React.forwardRef<
       baseColumns.push({
         id: `year-${year}`,
         accessorFn: (row) => row.yearlyData[year]?.total || 0,
-        header: ({ column }) => (
+        header: () => (
           <div className="text-right">
             <button
               className="flex items-center justify-end ml-auto year-column-transition"
-            onClick={() => toggleYear(year)}
-          >
+              onClick={() => toggleYear(year)}
+            >
               {year}
               <ChevronRight className="ml-2 h-4 w-4" />
             </button>
@@ -769,7 +775,7 @@ export const AccountingGridView = React.forwardRef<
       baseColumns.push({
         id: `year-${expandedYear}`,
         accessorFn: (row) => row.yearlyData[expandedYear]?.total || 0,
-        header: ({ column }) => (
+        header: () => (
           <div className="text-right">
             <button
               className="flex items-center justify-end ml-auto year-column-transition year-column-active"
@@ -838,8 +844,9 @@ export const AccountingGridView = React.forwardRef<
       })
     }
     
-    return baseColumns
-  }, [years, expandedYear, expandedCategories, comparisonMode, selectedMonths])
+    // Combiner toutes les colonnes
+    return [...baseColumns]
+  }, [years, expandedYear, expandedCategories, comparisonMode, selectedMonths, toggleCategory, toggleYear, renderMonthCellWithComparison, getComparisonValue])
 
   const table = useReactTable({
     data,
@@ -852,8 +859,15 @@ export const AccountingGridView = React.forwardRef<
     state: {
       sorting,
       columnFilters
-    }
-  } as any)
+    },
+    filterFns: {
+      dateRange: (row, id, value: [Date, Date]) => {
+        const cellValue = row.getValue(id) as string
+        const date = new Date(cellValue)
+        return date >= value[0] && date <= value[1]
+      },
+    },
+  })
 
   if (isLoading) {
     return (
@@ -1222,3 +1236,7 @@ export const AccountingGridView = React.forwardRef<
     </div>
   )
 })
+
+AccountingGridView.displayName = "AccountingGridView";
+
+export { AccountingGridView };

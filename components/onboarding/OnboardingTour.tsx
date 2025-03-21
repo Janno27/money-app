@@ -3,17 +3,10 @@
 import { useState, useEffect, useRef } from "react"
 import { useOnboarding } from "@/hooks/useOnboarding"
 import { Button } from "@/components/ui/button"
-import { IconButton } from "@/components/ui/icon-button"
-import { 
-  ArrowLeft, Check, MenuIcon, Moon, Plus, ChevronLeft,
-  Settings, Sun, Trash, Upload, X, Loader2, ArrowRight
-} from "lucide-react"
+import { Loader2, ArrowRight, ArrowLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { AnimatePresence, motion } from "framer-motion"
-import Link from "next/link"
-import { Step, tour } from './common';
-import { OnboardingGeneral } from './OnboardingGeneral';
-import { OnboardingCategories } from './OnboardingCategories';
+import { Step } from './common';
 import { demoDataGenerator } from '@/services/demo-data/demo-data-generator';
 
 interface OnboardingTourProps {
@@ -31,9 +24,11 @@ export function OnboardingTour({ type = 'new-user', steps, onComplete }: Onboard
   const {
     isOnboardingActive,
     currentStep,
+    // @ts-ignore - Variable préservée pour utilisation future
     totalSteps,
     nextStep,
     prevStep,
+    // @ts-ignore - Variable préservée pour utilisation future
     skipOnboarding,
     completeOnboarding
   } = useOnboarding(type, steps.length)
@@ -41,12 +36,17 @@ export function OnboardingTour({ type = 'new-user', steps, onComplete }: Onboard
   const containerRef = useRef<HTMLDivElement>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [isClosing, setIsClosing] = useState(false);
+  // @ts-ignore - Variables préservées pour utilisation future
   const [step, setStep] = useState(Step.OnboardingGeneral);
   const [initOption, setInitOption] = useState<'fromScratch' | 'demo' | 'import'>('fromScratch');
+  // @ts-ignore - Variables préservées pour utilisation future
   const [loading, setLoading] = useState(false);
   const [processingDemo, setProcessingDemo] = useState(false);
+  // @ts-ignore - Variables préservées pour utilisation future
   const [importFile, setImportFile] = useState<File | null>(null);
+  // @ts-ignore - Variable préservée pour utilisation future
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // @ts-ignore - Variables préservées pour utilisation future
   const [showSidebar, setShowSidebar] = useState(true);
 
   // Pour la communication avec les composants enfants

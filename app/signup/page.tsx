@@ -112,7 +112,7 @@ export default function SignupPage() {
     return () => {
       // Pas besoin de cleanup spécifique ici
     }
-  }, [searchParams]) // Retirer supabase des dépendances car il est stable
+  }, [searchParams, supabase]) // Ajouter supabase aux dépendances
   
   if (loading) {
     return (

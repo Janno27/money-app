@@ -1,10 +1,8 @@
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useEffect, useState, useCallback } from "react"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { useEffect, useState } from "react"
-import { format } from "date-fns"
-import { fr } from "date-fns/locale"
 import { formatCurrency } from "@/lib/format"
 import { ArrowDown, ArrowUp, Minus, ChevronLeft, ChevronRight } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -37,7 +35,7 @@ export function EvolutionSummary({ onYearChange, selectedYear: externalSelectedY
   const supabase = createClientComponentClient()
   const [isLoading, setIsLoading] = useState(true)
 
-  const fetchYearData = async (year: string) => {
+  const fetchYearData = useCallback(async (year: string) => {
     setIsLoading(true)
     const startDate = new Date(parseInt(year), 0, 1)
     const endDate = new Date(parseInt(year), 11, 31)
@@ -71,9 +69,9 @@ export function EvolutionSummary({ onYearChange, selectedYear: externalSelectedY
     summary.balance = summary.totalIncome - summary.totalExpenses
     setIsLoading(false)
     return summary
-  }
+  }, [supabase])
 
-  const fetchAvailableYears = async () => {
+  const fetchAvailableYears = useCallback(async () => {
     const { data, error } = await supabase
       .from('transactions_with_refunds')
       .select('accounting_date')
@@ -88,11 +86,11 @@ export function EvolutionSummary({ onYearChange, selectedYear: externalSelectedY
     ))
     const sortedYears = Array.from(years).sort().reverse()
     setAvailableYears(sortedYears)
-  }
+  }, [supabase])
 
   useEffect(() => {
     fetchAvailableYears()
-  }, [])
+  }, [fetchAvailableYears])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -102,7 +100,7 @@ export function EvolutionSummary({ onYearChange, selectedYear: externalSelectedY
       }
     }
     fetchData()
-  }, [currentYear])
+  }, [currentYear, fetchYearData])
 
   useEffect(() => {
     if (selectedYear && selectedYear !== currentYear) {
@@ -114,7 +112,7 @@ export function EvolutionSummary({ onYearChange, selectedYear: externalSelectedY
       }
       fetchData()
     }
-  }, [selectedYear])
+  }, [selectedYear, currentYear, fetchYearData])
 
   useEffect(() => {
     if (selectedYear) {

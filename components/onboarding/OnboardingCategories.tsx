@@ -58,7 +58,7 @@ export function OnboardingCategories({ theme, setLoading }: OnboardingCategories
               "text-sm mt-2",
               theme === 'dark' ? 'text-slate-300' : 'text-slate-500'
             )}>
-              Vous pouvez continuer vers l'étape suivante.
+              Vous pouvez continuer vers l&apos;étape suivante.
             </p>
           </div>
         ) : (

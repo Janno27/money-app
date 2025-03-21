@@ -69,10 +69,9 @@ interface CalendarViewProps {
   onTransactionsChange?: () => void
   events: Event[]
   onEventsChange?: () => void
-  onEventEdit?: (event: Event) => void
 }
 
-export function CalendarView({ currentDate, transactions, onTransactionsChange, events, onEventsChange, onEventEdit }: CalendarViewProps) {
+export function CalendarView({ currentDate, transactions, onTransactionsChange, events, onEventsChange }: CalendarViewProps) {
   const [isAddExpenseDialogOpen, setIsAddExpenseDialogOpen] = useState(false)
   const [isAddIncomeDialogOpen, setIsAddIncomeDialogOpen] = useState(false)
   const [isAddEventDialogOpen, setIsAddEventDialogOpen] = useState(false)
@@ -256,11 +255,8 @@ export function CalendarView({ currentDate, transactions, onTransactionsChange, 
   }
 
   const renderEventIndicator = (event: Event, eventIndex: number) => {
-    // Générer une couleur plus accessible et adaptée au mode sombre
-    // Utilisation de couleurs pastel plus visibles pour tous les modes
     const baseHue = (eventIndex * 50) % 360;
     const color = `hsl(${baseHue}, 70%, 50%)`;
-    const darkModeColor = `hsl(${baseHue}, 60%, 60%)`; // Plus lumineux pour le mode sombre
     
     return (
       <ContextMenu key={event.id}>
@@ -289,11 +285,11 @@ export function CalendarView({ currentDate, transactions, onTransactionsChange, 
                 </TooltipTrigger>
                 <TooltipContent
                   side="bottom"
-                  className="bg-background/95 dark:bg-slate-800/95 backdrop-blur-sm p-3 border border-slate-200 dark:border-slate-700 shadow-md rounded-md min-w-[200px]"
+                  className="bg-background/95 backdrop-blur-sm p-3 border border-slate-200 shadow-md rounded-md min-w-[200px]"
                 >
                   <div className="space-y-2">
                     <div className="flex items-center justify-between gap-2">
-                      <div className="text-sm font-medium text-foreground dark:text-slate-200">{event.title}</div>
+                      <div className="text-sm font-medium text-foreground">{event.title}</div>
                       <div className="flex -space-x-2">
                         {event.participants.map((participant) => {
                           if (!participant.user) return null
@@ -307,12 +303,12 @@ export function CalendarView({ currentDate, transactions, onTransactionsChange, 
                                 <Image
                                   src={participant.user.avatar}
                                   alt={participant.user.name}
-                                  className="h-5 w-5 rounded-full border-2 border-background dark:border-slate-800"
+                                  className="h-5 w-5 rounded-full border-2 border-background"
                                   width={20}
                                   height={20}
                                 />
                               ) : (
-                                <div className="h-5 w-5 rounded-full bg-primary/10 dark:bg-primary/20 border-2 border-background dark:border-slate-800 flex items-center justify-center text-[0.6rem] text-primary dark:text-blue-400">
+                                <div className="h-5 w-5 rounded-full bg-primary/10 border-2 border-background flex items-center justify-center text-[0.6rem] text-primary">
                                   {participant.user.name[0]}
                                 </div>
                               )}
@@ -322,16 +318,16 @@ export function CalendarView({ currentDate, transactions, onTransactionsChange, 
                       </div>
                     </div>
                     {event.description && (
-                      <div className="text-xs text-muted-foreground/90 dark:text-slate-400">{event.description}</div>
+                      <div className="text-xs text-muted-foreground/90">{event.description}</div>
                     )}
-                    <div className="text-xs font-medium text-primary dark:text-blue-400">
+                    <div className="text-xs font-medium text-primary">
                       {format(new Date(event.start_date), 'dd MMMM yyyy', { locale: fr })}
                       {event.start_time ? (
-                        <span className="text-muted-foreground dark:text-slate-500 ml-1">
+                        <span className="text-muted-foreground ml-1">
                           à {format(parse(event.start_time, 'HH:mm:ss', new Date()), 'HH:mm')}
                         </span>
                       ) : (
-                        <span className="text-muted-foreground dark:text-slate-500 ml-1">
+                        <span className="text-muted-foreground ml-1">
                           Journée
                         </span>
                       )}
@@ -342,19 +338,19 @@ export function CalendarView({ currentDate, transactions, onTransactionsChange, 
             </TooltipProvider>
           </div>
         </ContextMenuTrigger>
-        <ContextMenuContent className="bg-background/95 dark:bg-slate-800/95 backdrop-blur-sm border border-slate-200 dark:border-slate-700 shadow-md">
+        <ContextMenuContent className="bg-background/95 backdrop-blur-sm border border-slate-200 shadow-md">
           <ContextMenuItem
             onClick={() => {
               setSelectedEvent(event)
               setIsEditEventOpen(true)
             }}
-            className="text-slate-800 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white focus:text-slate-900 dark:focus:text-white"
+            className="text-slate-800 hover:text-slate-900 focus:text-slate-900"
           >
-            <Pencil className="h-4 w-4 mr-2 text-slate-500 dark:text-slate-400" />
+            <Pencil className="h-4 w-4 mr-2 text-slate-500" />
             Modifier
           </ContextMenuItem>
           <ContextMenuItem
-            className="text-destructive dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 focus:text-red-600 dark:focus:text-red-300"
+            className="text-destructive hover:text-red-600 focus:text-red-600"
             onClick={() => handleDeleteEvent(event)}
           >
             <Trash2 className="h-4 w-4 mr-2" />

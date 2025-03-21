@@ -34,8 +34,8 @@ const apiCallsTracker = {
       // Compter les appels par méthode dans la dernière minute
       const lastMinute = now - 60000
       const methodCounts = recentLog
-        .filter((entry: any) => entry.timestamp > lastMinute)
-        .reduce((acc: any, entry: any) => {
+        .filter((entry: { timestamp: number; method: string }) => entry.timestamp > lastMinute)
+        .reduce((acc: Record<string, number>, entry: { timestamp: number; method: string }) => {
           acc[entry.method] = (acc[entry.method] || 0) + 1
           return acc
         }, {})
@@ -112,7 +112,7 @@ export function resetSupabaseClient(): void {
 }
 
 // Fonction pour vérifier si l'utilisateur est connecté sans déclencher de multiples appels
-let cachedSession: any = null
+let cachedSession: unknown = null
 let lastSessionCheck = 0
 const SESSION_CACHE_DURATION = 60000 // 1 minute en millisecondes
 

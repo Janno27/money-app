@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Palette, MoreVertical, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { format, formatDistanceToNow } from "date-fns"
+import { formatDistanceToNow } from "date-fns"
 import { fr } from "date-fns/locale"
 
 interface NoteCardProps {

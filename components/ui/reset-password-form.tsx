@@ -1,9 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useRouter, useSearchParams } from "next/navigation"
-import { motion } from "framer-motion"
 import { Lock, ArrowLeft, Check } from "lucide-react"
 import Image from "next/image"
 
@@ -14,7 +12,6 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import { toast } from "@/components/ui/use-toast"
 import { getSupabaseClient, updateUserPassword } from "@/lib/supabase/client"
 
 interface ResetPasswordFormProps {
@@ -24,7 +21,8 @@ interface ResetPasswordFormProps {
 export function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const supabase = getSupabaseClient()
+  // Variable conservée pour une utilisation future potentielle
+  // const supabase = getSupabaseClient()
   
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')

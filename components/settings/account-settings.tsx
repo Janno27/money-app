@@ -5,7 +5,6 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
 import { toast } from "@/components/ui/use-toast"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -170,7 +169,7 @@ export function AccountSettings() {
               <div className="space-y-2">
                 <Label htmlFor="avatar-upload" className="cursor-pointer inline-flex h-8 items-center justify-center rounded-md bg-muted px-3 py-1 text-xs font-medium text-muted-foreground hover:bg-muted/80">
                   <Upload className="mr-2 h-3 w-3" />
-                  Changer l'image
+                  Changer l&apos;image
                 </Label>
                 <Input 
                   id="avatar-upload" 
@@ -211,7 +210,7 @@ export function AccountSettings() {
                   className="bg-muted"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Pour modifier votre email, contactez l'administrateur.
+                  Pour modifier votre email, contactez l&apos;administrateur.
                 </p>
               </div>
             </div>

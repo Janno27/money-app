@@ -2,7 +2,6 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import formidable from 'formidable';
 import fs from 'fs';
-import path from 'path';
 import axios from 'axios';
 
 // Désactiver le body parser par défaut pour les requêtes multipart/form-data
@@ -74,22 +73,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // Renvoyer la réponse du backend
       return res.status(200).json(response.data);
-    } catch (axiosError: any) {
-      console.error('Erreur axios:', axiosError.message);
-      if (axiosError.response) {
-        console.error('Détails de la réponse:', axiosError.response.data);
-        return res.status(axiosError.response.status).json({ 
-          error: `Erreur du serveur backend: ${axiosError.response.data.detail || axiosError.response.statusText}` 
+    } catch (axiosError: unknown) {
+      const error = axiosError as Error & { 
+        response?: { data: any, status: number, statusText: string }, 
+        request?: any 
+      };
+      console.error('Erreur axios:', error.message);
+      if (error.response) {
+        console.error('Détails de la réponse:', error.response.data);
+        return res.status(error.response.status).json({ 
+          error: `Erreur du serveur backend: ${error.response.data.detail || error.response.statusText}` 
         });
-      } else if (axiosError.request) {
-        console.error('Pas de réponse reçue:', axiosError.request);
+      } else if (error.request) {
+        console.error('Pas de réponse reçue:', error.request);
         return res.status(503).json({ error: 'Le serveur backend est inaccessible' });
       } else {
-        return res.status(500).json({ error: `Erreur de requête: ${axiosError.message}` });
+        return res.status(500).json({ error: `Erreur de requête: ${error.message}` });
       }
     }
-  } catch (error: any) {
-    console.error('Erreur lors de l\'importation du fichier:', error);
-    return res.status(500).json({ error: `Erreur lors de l'importation du fichier: ${error.message}` });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Erreur lors de l\'importation du fichier:', err);
+    return res.status(500).json({ error: `Erreur lors de l'importation du fichier: ${err.message}` });
   }
 } 

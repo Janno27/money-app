@@ -184,14 +184,14 @@ export function AcceptInvitation() {
               <XCircle className="h-5 w-5 text-destructive" />
               Erreur
             </CardTitle>
-            <CardDescription>Impossible de traiter l'invitation</CardDescription>
+            <CardDescription>Impossible de traiter l&apos;invitation</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">{error}</p>
           </CardContent>
           <CardFooter>
             <Button onClick={() => router.push('/')} variant="outline" className="w-full">
-              Retour à l'accueil
+              Retour à l&apos;accueil
             </Button>
           </CardFooter>
         </Card>
@@ -230,7 +230,7 @@ export function AcceptInvitation() {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground mb-4">
-            Vous avez reçu une invitation à rejoindre l'organisation <span className="font-semibold">{organization?.name}</span>.
+            Vous avez reçu une invitation à rejoindre l&apos;organisation <span className="font-semibold">{organization?.name}</span>.
             Souhaitez-vous accepter cette invitation?
           </p>
         </CardContent>
@@ -239,7 +239,7 @@ export function AcceptInvitation() {
             Refuser
           </Button>
           <Button onClick={handleAcceptInvitation}>
-            Accepter l'invitation
+            Accepter l&apos;invitation
           </Button>
         </CardFooter>
       </Card>

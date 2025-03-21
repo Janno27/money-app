@@ -11,9 +11,9 @@ import {
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Note } from "./types"
 import { NotesCanvas } from "./NotesCanvas"
-import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 export function NotesDrawer() {
   const [open, setOpen] = useState(false)
@@ -191,7 +191,7 @@ export function NotesDrawer() {
 
   const handleUpdateNote = async (id: string, updates: Partial<Note>) => {
     // Destructurer en ignorant le champ user qui n'est pas nécessaire pour l'update
-    const { user: _user, ...updateData } = updates
+    const { user: _, ...updateData } = updates
 
     const { data: note, error } = await supabase
       .from('notes')
@@ -270,12 +270,16 @@ export function NotesDrawer() {
             </button>
           </div>
         </DrawerHeader>
-        <div className="flex-1 overflow-auto">
-          <NotesCanvas
-            notes={filteredNotes}
-            onUpdateNote={handleUpdateNote}
-            onDeleteNote={handleDeleteNote}
-          />
+        <div className="flex-1 overflow-hidden">
+          <ScrollArea className="h-full">
+            <div className="notes-canvas h-full min-h-[500px]">
+              <NotesCanvas
+                notes={filteredNotes}
+                onUpdateNote={handleUpdateNote}
+                onDeleteNote={handleDeleteNote}
+              />
+            </div>
+          </ScrollArea>
         </div>
       </DrawerContent>
     </Drawer>

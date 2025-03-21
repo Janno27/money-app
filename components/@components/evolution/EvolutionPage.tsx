@@ -1,19 +1,17 @@
 "use client"
 
-import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { ArrowLeft, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Switch } from "@/components/ui/switch"
-import { EvolutionSummary } from "@/components/@components/evolution/EvolutionSummary"
-import { EvolutionChart } from "@/components/@components/evolution/EvolutionChart"
-import { EvolutionDistribution } from "@/components/@components/evolution/EvolutionDistribution"
+import { EvolutionSummary } from "./EvolutionSummary"
+import { EvolutionChart } from "./EvolutionChart"
+import { EvolutionDistribution } from "./EvolutionDistribution"
+import { useRouter } from "next/navigation"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import React, { useState, useEffect, useCallback } from "react"
+import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
-import { ArrowLeft, ArrowRight } from "lucide-react"
 
 interface MonthlyData {
   month: string
@@ -30,7 +28,7 @@ export default function EvolutionPage() {
   const [showAllSubcategories, setShowAllSubcategories] = useState(false)
   const supabase = createClientComponentClient()
 
-  const fetchYearData = async (year: string) => {
+  const fetchYearData = useCallback(async (year: string) => {
     const { data: transactions } = await supabase
       .from("transactions_with_refunds")
       .select("*")
@@ -56,9 +54,9 @@ export default function EvolutionPage() {
     })
 
     return monthlyData
-  }
+  }, [supabase])
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true)
     try {
       const currentYear = new Date().getFullYear().toString()
@@ -77,17 +75,17 @@ export default function EvolutionPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [fetchYearData, selectedYear])
 
   useEffect(() => {
     fetchData()
-  }, [])
+  }, [fetchData])
 
   useEffect(() => {
     if (selectedYear) {
       fetchYearData(selectedYear).then(setComparisonData)
     }
-  }, [selectedYear])
+  }, [selectedYear, fetchYearData])
 
   const handleYearChange = (year: string) => {
     setSelectedYear(year)
@@ -110,7 +108,7 @@ export default function EvolutionPage() {
           <div className="space-y-1">
             <h1 className="text-2xl font-medium tracking-tight text-slate-700 dark:text-slate-100">Évolution</h1>
             <p className="text-md text-slate-600 dark:text-slate-300">
-              Analysez l'évolution de vos finances dans le temps
+              Analysez l&apos;évolution de vos finances dans le temps
             </p>
           </div>
         </div>
@@ -148,7 +146,7 @@ export default function EvolutionPage() {
                     </div>
                     <div className="flex items-center justify-between">
                       <p className="text-sm text-slate-600 dark:text-slate-300">
-                        Vue détaillée de vos finances sur l'année {new Date().getFullYear().toString()}
+                        Vue détaillée de vos finances sur l&apos;année {new Date().getFullYear().toString()}
                       </p>
                       
                       {/* Légende */}

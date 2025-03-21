@@ -105,7 +105,7 @@ export function CategorySettings() {
   // Charger les catégories et sous-catégories
   useEffect(() => {
     fetchCategories()
-  }, [categoryType])
+  }, [categoryType, fetchCategories])
 
   const toggleCategory = (categoryId: string) => {
     const newExpanded = new Set(expandedCategories)

@@ -102,24 +102,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         importedData,
         transactionsCount: data.length
       });
-    } catch (axiosError: any) {
-      console.error('Erreur axios:', axiosError.message);
-      if (axiosError.response) {
-        console.error('Détails de la réponse:', axiosError.response.data);
-        console.error('Status code:', axiosError.response.status);
-        console.error('Headers:', axiosError.response.headers);
-        return res.status(axiosError.response.status).json({ 
-          error: `Erreur du serveur backend: ${JSON.stringify(axiosError.response.data)}`
+    } catch (axiosError: unknown) {
+      const error = axiosError as Error & { 
+        response?: { data: any, status: number, headers: any }, 
+        request?: any 
+      };
+      console.error('Erreur axios:', error.message);
+      if (error.response) {
+        console.error('Détails de la réponse:', error.response.data);
+        console.error('Status code:', error.response.status);
+        console.error('Headers:', error.response.headers);
+        return res.status(error.response.status).json({ 
+          error: `Erreur du serveur backend: ${JSON.stringify(error.response.data)}`
         });
-      } else if (axiosError.request) {
-        console.error('Pas de réponse reçue:', axiosError.request);
+      } else if (error.request) {
+        console.error('Pas de réponse reçue:', error.request);
         return res.status(503).json({ error: 'Le serveur backend est inaccessible' });
       } else {
-        return res.status(500).json({ error: `Erreur de requête: ${axiosError.message}` });
+        return res.status(500).json({ error: `Erreur de requête: ${error.message}` });
       }
     }
-  } catch (error: any) {
-    console.error('Erreur lors de la finalisation de l\'importation:', error);
-    return res.status(500).json({ error: `Erreur lors de la validation de l'importation: ${error.message}` });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Erreur lors de la finalisation de l\'importation:', err);
+    return res.status(500).json({ error: `Erreur lors de la validation de l'importation: ${err.message}` });
   }
 } 

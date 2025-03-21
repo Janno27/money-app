@@ -1,14 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { format, isToday, isTomorrow, isThisWeek, isThisMonth, compareAsc, isSameDay, addDays, isPast } from "date-fns"
+import { format, isToday, isTomorrow, isThisWeek, isThisMonth, compareAsc, isSameDay, addDays } from "date-fns"
 import { fr } from "date-fns/locale"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Pencil, CalendarPlus } from "lucide-react"
+import { CalendarPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import Image from "next/image"
 import { Card } from "@/components/ui/card"
-import { MoreHorizontal } from "lucide-react"
 import {
   Tooltip,
   TooltipContent,

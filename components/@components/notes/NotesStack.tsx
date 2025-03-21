@@ -5,9 +5,7 @@ import { Note } from "./types"
 import { NoteCard } from "./NoteCard"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, ArrowRight, Pen } from "lucide-react"
-import { cn } from "@/lib/utils"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface NotesStackProps {
@@ -39,8 +37,13 @@ export function NotesStack({
       return new Date(b.updated_at || b.created_at).getTime() - 
         new Date(a.updated_at || a.created_at).getTime()
     })
+    
     setSortedNotes(sorted)
-  }, [notes])
+    // Réinitialiser l'index si nécessaire
+    if (currentIndex >= sorted.length && sorted.length > 0) {
+      setCurrentIndex(0)
+    }
+  }, [notes, currentIndex])
 
   if (isLoading) {
     return <NotesStackSkeleton />

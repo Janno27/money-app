@@ -102,12 +102,12 @@ export function GeneralSettings() {
       
       // 4. Fermer la boîte de dialogue
       setConfirmDelete(false)
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       console.error("Erreur lors de la suppression des données:", error)
       
       toast({
         title: "Erreur",
-        description: error.message || "Une erreur est survenue lors de la suppression des données.",
+        description: error instanceof Error ? error.message : "Une erreur est survenue lors de la suppression des données.",
         variant: "destructive"
       })
     } finally {

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Search, PenLine, RotateCcw, ChevronDown, Plus, Settings2, Maximize, Minimize, Maximize2, Minimize2 } from "lucide-react"
+import { Search, PenLine, RotateCcw, ChevronDown, Plus, Settings2, Maximize2, Minimize2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -41,7 +41,6 @@ interface AccountingFiltersProps {
   onToggleAllCategories?: () => void
   onComparisonModeChange?: (mode: ComparisonMode, selectedMonths?: string[]) => void
   comparisonMode?: ComparisonMode
-  onDateRangeChange?: (range: { from: Date | null; to: Date | null }) => void
   onMaximize?: () => void
   isMaximized?: boolean
 }
@@ -53,7 +52,6 @@ export function AccountingFilters({
   onToggleAllCategories,
   onComparisonModeChange,
   comparisonMode = 'month-to-month',
-  onDateRangeChange,
   onMaximize,
   isMaximized = false
 }: AccountingFiltersProps) {
@@ -80,7 +78,7 @@ export function AccountingFilters({
   
   const [selectedMonths, setSelectedMonths] = React.useState<string[]>(defaultSelectedMonths)
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = React.useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('transactions_with_refunds')
@@ -100,7 +98,7 @@ export function AccountingFilters({
     } catch (error) {
       console.error('Error fetching transactions:', error)
     }
-  }
+  }, [supabase])
 
   React.useEffect(() => {
     if (open) {

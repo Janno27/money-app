@@ -160,10 +160,10 @@ export function NotesCanvas({ notes, onUpdateNote, onDeleteNote }: NotesCanvasPr
   return (
     <div 
       ref={canvasRef}
-      className="notes-canvas relative h-full w-full overflow-auto p-6"
+      className="relative w-full h-full overflow-auto notes-canvas"
       style={{ 
-        minWidth: "100%", 
-        minHeight: "100%", 
+        minHeight: '500px', 
+        position: 'relative',
         width: Math.max(
           ...notes.map(note => note.position.x + 350), // 350px pour la largeur de la note + marge
           1200 // Largeur minimale pour permettre le défilement même avec peu de notes
@@ -181,8 +181,8 @@ export function NotesCanvas({ notes, onUpdateNote, onDeleteNote }: NotesCanvasPr
         <div
           key={note.id}
           data-note-id={note.id}
-          onMouseDown={(e) => handleMouseDown(e, note)}
           className="absolute touch-none select-none"
+          onMouseDown={(e) => handleMouseDown(e, note)}
           style={{
             transform: `translate(${note.position.x}px, ${note.position.y}px)`,
             transition: dragState.isDragging && dragState.noteId === note.id ? 'none' : 'transform 0.1s ease-out',

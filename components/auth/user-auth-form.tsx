@@ -10,9 +10,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-// Cette interface étend les propriétés HTML div sans ajouter de propriétés supplémentaires
+// Supprimer l'interface vide et utiliser directement les props dans la fonction
 interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {
-  // Aucune propriété spécifique supplémentaire n'est nécessaire
+  /* Cette interface est nécessaire pour étendre les propriétés HTML tout en gardant la possibilité
+     d'ajouter des propriétés spécifiques dans le futur. */
 }
 
 export function UserAuthForm({ className, ...props }: UserAuthFormProps) {

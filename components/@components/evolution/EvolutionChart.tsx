@@ -1,9 +1,6 @@
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import { formatCurrency } from "@/lib/format"
-import { ArrowDown, ArrowUp, Minus, ArrowRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { useRouter } from "next/navigation"
-import { Skeleton } from "@/components/ui/skeleton"
+import { ArrowDown, ArrowUp, Minus } from "lucide-react"
 
 interface EvolutionChartProps {
   data: Array<{
@@ -21,8 +18,6 @@ interface EvolutionChartProps {
 }
 
 export function EvolutionChart({ data, isLoading, comparisonData, isDashboard = false }: EvolutionChartProps) {
-  const router = useRouter()
-  
   // Style conditionnel basé sur si c'est le dashboard ou la page évolution
   const containerStyle = isDashboard
     ? { minHeight: "calc(100% - 30px)" }

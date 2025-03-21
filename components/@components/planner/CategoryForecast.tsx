@@ -12,9 +12,24 @@ interface CategoryForecastProps {
   className?: string
 }
 
+interface Transaction {
+  id?: string
+  final_amount: any
+  is_income: any
+  accounting_date: any
+  category: {
+    id: any
+    name: any
+  }
+  subcategory?: {
+    id: any
+    name: any
+  }
+}
+
 interface TooltipState {
   visible: boolean;
-  item: any;
+  item: CategoryData | null;
   x: number;
   y: number;
 }
@@ -41,7 +56,6 @@ export function CategoryForecast({ monthsAhead = 6, className }: CategoryForecas
   // État pour les données et le chargement
   const [data, setData] = useState<CategoryData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   
   // Client Supabase
   const supabase = createClientComponentClient();
@@ -107,7 +121,7 @@ export function CategoryForecast({ monthsAhead = 6, className }: CategoryForecas
         const subcategoryMap = new Map<string, CategoryData>();
         
         // Traiter les transactions réelles
-        transactionsData?.forEach((transaction: any) => {
+        transactionsData?.forEach((transaction: Transaction) => {
           if (!transaction.subcategory) return;
           
           const subcategoryName = transaction.subcategory.name;
@@ -129,7 +143,7 @@ export function CategoryForecast({ monthsAhead = 6, className }: CategoryForecas
         
         // Traiter les prévisions
         if (forecastData.categories && forecastData.categories.expense) {
-          Object.entries(forecastData.categories.expense).forEach(([category, values]: [string, any]) => {
+          Object.entries(forecastData.categories.expense).forEach(([category, values]: [string, unknown]) => {
             // Trouver les sous-catégories correspondantes
             const subcategories = Array.from(subcategoryMap.values())
               .filter(item => item.category.toLowerCase() === category.toLowerCase());
@@ -157,11 +171,9 @@ export function CategoryForecast({ monthsAhead = 6, className }: CategoryForecas
           .slice(0, 15); // Limiter aux 15 premières sous-catégories
         
         setData(categoryData);
-        setError(null);
         
       } catch (err) {
         console.error("Erreur:", err);
-        setError("Une erreur s'est produite lors du chargement des données.");
         
         // Données de démonstration en cas d'erreur
         const demoData: CategoryData[] = [
@@ -279,7 +291,7 @@ export function CategoryForecast({ monthsAhead = 6, className }: CategoryForecas
   }
 
   // Gérer l'apparition du tooltip
-  const handleMouseEnter = (e: React.MouseEvent, item: any) => {
+  const handleMouseEnter = (e: React.MouseEvent, item: CategoryData) => {
     if (!containerRef.current) return;
     
     const rect = containerRef.current.getBoundingClientRect();

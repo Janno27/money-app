@@ -1,7 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    typedRoutes: true
+    // typedRoutes a été retiré car incompatible avec Turbopack
+  },
+  images: {
+    domains: ['ouiwpkxvjxcfbypmurap.supabase.co']
   }
 }
 

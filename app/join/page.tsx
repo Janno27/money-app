@@ -9,11 +9,13 @@ import { toast } from "@/components/ui/use-toast"
 import { Loader2, CheckCircle2, XCircle } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useToast } from "@/components/ui/use-toast"
 
 export default function JoinPage() {
+  const supabase = createClientComponentClient()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const supabase = createClientComponentClient()
+  const { toast } = useToast()
   
   const [loading, setLoading] = useState(true)
   const [joining, setJoining] = useState(false)
@@ -23,62 +25,7 @@ export default function JoinPage() {
   const [password, setPassword] = useState("")
   const [name, setName] = useState("")
   const [organization, setOrganization] = useState<{ id: string, name: string } | null>(null)
-  
-  useEffect(() => {
-    const init = async () => {
-      setLoading(true)
-      
-      try {
-        // Récupérer les paramètres du lien d'invitation
-        const emailParam = searchParams.get('email')
-        const organizationId = searchParams.get('organization')
-        const invitationCode = searchParams.get('code')
-        
-        if (!emailParam || !organizationId || !invitationCode) {
-          setError("Lien d'invitation invalide.")
-          return
-        }
-        
-        setEmail(emailParam)
-        
-        // Récupérer les détails de l'organisation
-        const { data: orgData, error: orgError } = await supabase
-          .from('organizations')
-          .select('id, name')
-          .eq('id', organizationId)
-          .single()
-        
-        if (orgError) {
-          setError("Organisation introuvable.")
-          return
-        }
-        
-        setOrganization(orgData)
-        
-        // Vérifier si l'utilisateur est déjà connecté
-        const { data: { user } } = await supabase.auth.getUser()
-        
-        if (user) {
-          // Si l'utilisateur est déjà connecté, vérifier si son email correspond à l'invitation
-          if (user.email === emailParam) {
-            // Ajouter directement l'utilisateur à l'organisation
-            await joinOrganization(user.id, organizationId)
-          } else {
-            // L'utilisateur est connecté avec un compte différent
-            setError(`Vous êtes connecté avec un compte différent (${user.email}). Veuillez vous déconnecter et réessayer avec ${emailParam}.`)
-          }
-        }
-        
-      } catch (err) {
-        console.error("Erreur lors de l'initialisation:", err)
-        setError("Une erreur est survenue. Veuillez réessayer.")
-      } finally {
-        setLoading(false)
-      }
-    }
-    
-    init()
-  }, [searchParams, supabase, router])
+  const [userId, setUserId] = useState("")
   
   const joinOrganization = async (userId: string, organizationId: string) => {
     try {
@@ -138,6 +85,73 @@ export default function JoinPage() {
       setError("Une erreur est survenue lors de l'acceptation de l'invitation.")
     }
   }
+  
+  useEffect(() => {
+    const init = async () => {
+      try {
+        setLoading(true)
+        
+        // Vérifier si l'utilisateur est déjà connecté
+        const { data: { user } } = await supabase.auth.getUser()
+        
+        if (user) {
+          setUserId(user.id)
+        }
+        
+        // Récupérer l'email d'invitation et le token
+        const inviteEmail = searchParams?.get('email')
+        const token = searchParams?.get('token')
+        
+        if (!inviteEmail) {
+          setError("Aucun email d'invitation spécifié.")
+          return
+        }
+        
+        setEmail(inviteEmail)
+        
+        // Vérifier le token d'invitation
+        if (!token) {
+          setError("Token d'invitation manquant.")
+          return
+        }
+        
+        // Récupérer les détails de l'organisation
+        const { data: inviteData, error: inviteError } = await supabase
+          .from('organization_invites')
+          .select('*, organizations(*)')
+          .eq('email', inviteEmail)
+          .eq('token', token)
+          .maybeSingle()
+        
+        if (inviteError) throw inviteError
+        
+        if (!inviteData) {
+          setError("Invitation non valide ou expirée.")
+          return
+        }
+        
+        // Vérifier si l'invitation n'est pas expirée
+        if (inviteData.expires_at && new Date(inviteData.expires_at) < new Date()) {
+          setError("Cette invitation a expiré.")
+          return
+        }
+        
+        setOrganization(inviteData.organizations)
+        
+        // Si utilisateur connecté, rejoindre automatiquement
+        if (user) {
+          await joinOrganization(user.id, inviteData.organizations.id)
+        }
+      } catch (error) {
+        console.error("Erreur lors de l'initialisation:", error)
+        setError("Une erreur est survenue lors du chargement de l'invitation.")
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    init()
+  }, [searchParams, supabase, router, joinOrganization])
   
   const handleSignUpAndJoin = async () => {
     if (!organization || !email || !password) return
@@ -239,7 +253,7 @@ export default function JoinPage() {
           </CardContent>
           <CardFooter>
             <Button onClick={() => router.push('/')} variant="outline" className="w-full">
-              Retour à l'accueil
+              Retour à l&apos;accueil
             </Button>
           </CardFooter>
         </Card>
@@ -256,7 +270,7 @@ export default function JoinPage() {
               <CheckCircle2 className="h-5 w-5 text-green-500" />
               Invitation acceptée
             </CardTitle>
-            <CardDescription>Vous avez rejoint l'organisation avec succès</CardDescription>
+            <CardDescription>Vous avez rejoint l&apos;organisation avec succès</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">

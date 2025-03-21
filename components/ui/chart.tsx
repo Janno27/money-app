@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { TooltipProps, Tooltip } from "recharts"
+import { Tooltip } from "recharts"
 import { cn } from "@/lib/utils"
 
 export type ChartConfig = Record<string, { label: string; color: string }>
@@ -37,11 +37,11 @@ interface ChartTooltipContentProps {
     color: string;
     name: string;
     value: number;
-    [key: string]: any;
+    [key: string]: unknown;
   }>;
   label?: string;
   className?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export function ChartTooltipContent({

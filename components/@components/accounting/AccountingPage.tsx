@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState } from "react"
 import { Plus, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
@@ -8,7 +8,7 @@ import { AccountingFilters, ComparisonMode } from "./AccountingFilters"
 import { AccountingGridView } from "./AccountingGridView"
 import { AccountingIncomeGridView } from "./AccountingIncomeGridView"
 import { AddTransactionDialog } from "@/components/transactions/add-transaction-dialog"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
 import React from "react"
 

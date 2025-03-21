@@ -2,8 +2,7 @@
 
 import * as React from "react"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { format, addMonths, startOfMonth, parse } from "date-fns"
-import { fr } from "date-fns/locale"
+import { format } from "date-fns"
 
 import {
   Area,
@@ -12,11 +11,8 @@ import {
   ResponsiveContainer,
   Tooltip,
   XAxis,
-  YAxis,
   ReferenceLine,
 } from "recharts"
-import { formatCurrency } from "@/lib/format"
-import { Skeleton } from "@/components/ui/skeleton"
 
 // Définir un index pour les mois
 const MONTHS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
@@ -164,7 +160,7 @@ export function PlannerChart({ monthsAhead = 6, className }: PlannerChartProps) 
           const month = parseInt(monthKey.substring(5, 7)) - 1; // -1 car les mois sont 0-indexés en JS
           
           // Déterminer si c'est une prévision (après le mois courant)
-          const isPrevision = index > currentMonthIndex;
+          const isAfterCurrentMonth = index > currentMonthIndex;
           
           // Préparer les valeurs
           let soldeReel = undefined;
@@ -231,7 +227,7 @@ export function PlannerChart({ monthsAhead = 6, className }: PlannerChartProps) 
     
     // Générer tous les mois de l'année
     for (let i = 0; i < 12; i++) {
-      const isPrevision = i > currentMonth;
+      const isAfterCurrentMonth = i > currentMonth;
       const value = getValueForMonth(i);
       
       demoData.push({
@@ -248,17 +244,21 @@ export function PlannerChart({ monthsAhead = 6, className }: PlannerChartProps) 
   
   // Formatage des valeurs en euros
   const formatEuro = (value: number | undefined) => {
-    if (value === undefined) return "N/A";
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'EUR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
+    if (value === undefined) return '';
+    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
   };
 
+  // Définir une interface pour les props du CustomTooltip
+  interface CustomTooltipProps {
+    active?: boolean;
+    payload?: Array<{
+      dataKey: string;
+      payload: ChartDataPoint;
+    }>;
+  }
+
   // Tooltip personnalisé
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
     if (active && payload && payload.length) {
       const dataPoint = payload[0].payload as ChartDataPoint;
       // Déterminer si on affiche une donnée réelle ou une prévision

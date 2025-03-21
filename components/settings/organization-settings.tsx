@@ -5,13 +5,11 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
 import { toast } from "@/components/ui/use-toast"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { 
   Table, 
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -28,13 +26,10 @@ import {
 } from "@/components/ui/dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { 
-  Building, 
   Loader2, 
   User,
-  UserPlus,
   Mail,
   Trash2,
-  UserCog,
   CheckCircle,
   Copy,
   Plus
@@ -58,7 +53,6 @@ export function OrganizationSettings() {
   const [loading, setLoading] = useState(false)
   const [updating, setUpdating] = useState(false)
   const [inviteEmail, setInviteEmail] = useState("")
-  const [invitationLink, setInvitationLink] = useState("")
   const [isOwner, setIsOwner] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   
@@ -109,8 +103,8 @@ export function OrganizationSettings() {
             if (rolesError) throw rolesError
             
             // Combiner les données des membres avec leurs rôles
-            const membersWithRoles = membersData.map((member: any) => {
-              const memberRole = rolesData.find((r: any) => r.user_id === member.id)
+            const membersWithRoles = membersData.map((member: Record<string, any>) => {
+              const memberRole = rolesData.find((r: Record<string, any>) => r.user_id === member.id)
               return {
                 ...member,
                 role: memberRole?.role || 'member'
@@ -215,7 +209,7 @@ export function OrganizationSettings() {
           description: (
             <div className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-green-500" />
-              <span>L'utilisateur <strong>{inviteEmail}</strong> a été ajouté à votre organisation.</span>
+              <span>L&apos;utilisateur <strong>{inviteEmail}</strong> a été ajouté à votre organisation.</span>
             </div>
           ),
           duration: 5000
@@ -242,18 +236,13 @@ export function OrganizationSettings() {
           throw new Error(result.error || "Impossible d'envoyer l'invitation.");
         }
         
-        // Stocker le lien d'invitation
-        if (result.invitationLink) {
-          setInvitationLink(result.invitationLink);
-        }
-        
         toast({
           title: "Lien d'invitation créé",
           description: (
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-green-500" />
-                <span>Partagez ce lien avec <strong>{inviteEmail}</strong> pour l'inviter à rejoindre votre organisation.</span>
+                <span>Partagez ce lien avec <strong>{inviteEmail}</strong> pour l&apos;inviter à rejoindre votre organisation.</span>
               </div>
               <div className="flex gap-2 mt-2">
                 <Button 
@@ -280,11 +269,11 @@ export function OrganizationSettings() {
       
       setInviteEmail("");
       
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       console.error("Erreur lors de l'invitation:", error);
       
       // Gérer les erreurs spécifiques
-      let errorMessage = error.message || "Impossible d'envoyer l'invitation.";
+      const errorMessage = error instanceof Error ? error.message : "Impossible d&apos;envoyer l&apos;invitation.";
       
       toast({
         variant: "destructive",
@@ -378,26 +367,26 @@ export function OrganizationSettings() {
     <ScrollArea className="h-full">
       <div className="p-6 space-y-6">
         <div>
-          <h3 className="text-lg font-medium">Paramètres de l'organisation</h3>
+          <h3 className="text-lg font-medium">Paramètres de l&apos;organisation</h3>
           <p className="text-sm text-muted-foreground">
             Gérez les informations de votre organisation et vos membres
           </p>
         </div>
         
         <div className="space-y-6">
-          {/* Section Informations de l'organisation */}
+          {/* Section Informations de l&apos;organisation */}
           <div className="space-y-4">
-            <h4 className="text-sm font-medium">Informations de l'organisation</h4>
+            <h4 className="text-sm font-medium">Informations de l&apos;organisation</h4>
             
             <div className="grid gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="orgName">Nom de l'organisation</Label>
+                <Label htmlFor="orgName">Nom de l&apos;organisation</Label>
                 <div className="flex gap-2">
                   <Input 
                     id="orgName" 
                     value={organizationName} 
                     onChange={(e) => setOrganizationName(e.target.value)} 
-                    placeholder="Nom de l'organisation"
+                    placeholder="Nom de l&apos;organisation"
                     disabled={!isOwner}
                   />
                   {isOwner && (
@@ -416,7 +405,7 @@ export function OrganizationSettings() {
           {/* Section Membres */}
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h4 className="text-sm font-medium">Membres de l'organisation</h4>
+              <h4 className="text-sm font-medium">Membres de l&apos;organisation</h4>
               
               <Dialog>
                 <DialogTrigger asChild>
@@ -432,7 +421,7 @@ export function OrganizationSettings() {
                   <DialogHeader>
                     <DialogTitle>Inviter un utilisateur</DialogTitle>
                     <DialogDescription>
-                      Nous enverrons un email d'invitation pour rejoindre votre organisation.
+                      Nous enverrons un email d&apos;invitation pour rejoindre votre organisation.
                     </DialogDescription>
                   </DialogHeader>
                   
@@ -447,7 +436,7 @@ export function OrganizationSettings() {
                         placeholder="email@exemple.com"
                       />
                       <p className="text-xs text-muted-foreground">
-                        Un email sera envoyé avec un lien d'invitation.
+                        Un email sera envoyé avec un lien d&apos;invitation.
                       </p>
                     </div>
                     
@@ -455,7 +444,7 @@ export function OrganizationSettings() {
                       <Mail className="h-4 w-4" />
                       <AlertTitle>Comment ça fonctionne</AlertTitle>
                       <AlertDescription className="text-xs">
-                        L'utilisateur recevra un email avec un lien pour créer un compte ou se connecter.
+                        L&apos;utilisateur recevra un email avec un lien pour créer un compte ou se connecter.
                         Une fois connecté, il deviendra automatiquement membre de votre organisation.
                       </AlertDescription>
                     </Alert>
@@ -475,7 +464,7 @@ export function OrganizationSettings() {
                       ) : (
                         <>
                           <Mail className="h-4 w-4 mr-2" />
-                          Envoyer l'invitation
+                          Envoyer l&apos;invitation
                         </>
                       )}
                     </Button>

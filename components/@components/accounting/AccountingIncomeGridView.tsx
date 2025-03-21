@@ -2,8 +2,6 @@
 
 import * as React from "react"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { format } from "date-fns"
-import { fr } from "date-fns/locale"
 import { formatCurrency } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { ComparisonMode } from "./AccountingFilters"
@@ -25,13 +23,11 @@ import {
   getSortedRowModel,
   ColumnFiltersState,
   getFilteredRowModel,
-  ColumnMeta,
 } from "@tanstack/react-table"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { ChevronDown, ChevronRight, ArrowUpDown } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 
-interface AccountingGridViewProps {
+interface AccountingIncomeGridViewProps {
   searchQuery: string
   dateRange: {
     from: Date | null
@@ -41,9 +37,21 @@ interface AccountingGridViewProps {
   comparisonMode: ComparisonMode
   selectedMonths: string[]
   className?: string
-  onSearchChange?: (value: string) => void
-  onDateRangeChange?: (range: { from: Date | null; to: Date | null }) => void
   isMaximized?: boolean
+}
+
+// Définir le type pour les sous-catégories
+interface SubcategoryData {
+  id: string;
+  name: string;
+  yearlyData: {
+    [year: string]: {
+      total: number;
+      monthlyData: {
+        [month: string]: number;
+      };
+    };
+  };
 }
 
 interface CategoryData {
@@ -79,9 +87,9 @@ declare module '@tanstack/react-table' {
   }
 }
 
-export const AccountingIncomeGridView = React.forwardRef<
+const AccountingIncomeGridView = React.forwardRef<
   { fetchData: () => void; toggleAllCategories: () => void },
-  AccountingGridViewProps
+  AccountingIncomeGridViewProps
 >(({ 
   searchQuery, 
   dateRange, 
@@ -89,8 +97,6 @@ export const AccountingIncomeGridView = React.forwardRef<
   comparisonMode,
   selectedMonths,
   className,
-  onSearchChange,
-  onDateRangeChange,
   isMaximized = false
 }, ref) => {
   const supabase = createClientComponentClient()
@@ -186,16 +192,7 @@ export const AccountingIncomeGridView = React.forwardRef<
             monthlyData: {[month: string]: number}
           }
         },
-        subcategories: Map<string, {
-          id: string,
-          name: string,
-          yearlyData: {
-            [year: string]: {
-              total: number,
-              monthlyData: {[month: string]: number}
-            }
-          }
-        }>
+        subcategories: Map<string, SubcategoryData>
       }>()
 
       // Initialiser les totaux par année
@@ -232,9 +229,9 @@ export const AccountingIncomeGridView = React.forwardRef<
                   monthlyData: {[month: string]: number}
                 }
               },
-              subcategories: Map<string, any>
+              subcategories: Map<string, SubcategoryData>
             } = {
-            id: categoryId,
+              id: categoryId,
               name: categoryName,
               yearlyData: {},
               subcategories: new Map()
@@ -357,7 +354,7 @@ export const AccountingIncomeGridView = React.forwardRef<
 
   React.useEffect(() => {
     fetchData()
-  }, [isIncome, dateRange, searchQuery])
+  }, [dateRange, searchQuery, isIncome])
 
   // Expose methods via ref
   React.useImperativeHandle(ref, () => ({
@@ -681,7 +678,7 @@ export const AccountingIncomeGridView = React.forwardRef<
     }
   }
 
-  const columns = React.useMemo<ColumnDef<CategoryData>[]>(() => {
+  const columns = React.useMemo(() => {
     // Création des colonnes de base
     const baseColumns: ColumnDef<CategoryData>[] = [
       {
@@ -740,12 +737,12 @@ export const AccountingIncomeGridView = React.forwardRef<
       baseColumns.push({
         id: `year-${year}`,
         accessorFn: (row) => row.yearlyData[year]?.total || 0,
-        header: ({ column }) => (
+        header: () => (
           <div className="text-right">
             <button
               className="flex items-center justify-end ml-auto year-column-transition"
-            onClick={() => toggleYear(year)}
-          >
+              onClick={() => toggleYear(year)}
+            >
               {year}
               <ChevronRight className="ml-2 h-4 w-4" />
             </button>
@@ -769,7 +766,7 @@ export const AccountingIncomeGridView = React.forwardRef<
       baseColumns.push({
         id: `year-${expandedYear}`,
         accessorFn: (row) => row.yearlyData[expandedYear]?.total || 0,
-        header: ({ column }) => (
+        header: () => (
           <div className="text-right">
             <button
               className="flex items-center justify-end ml-auto year-column-transition year-column-active"
@@ -838,8 +835,9 @@ export const AccountingIncomeGridView = React.forwardRef<
       })
     }
     
+    // Combiner toutes les colonnes
     return baseColumns
-  }, [years, expandedYear, expandedCategories, comparisonMode, selectedMonths])
+  }, [years, expandedYear, expandedCategories, comparisonMode, selectedMonths, toggleCategory, toggleYear, renderMonthCellWithComparison, getComparisonValue])
 
   const table = useReactTable({
     data,
@@ -852,8 +850,15 @@ export const AccountingIncomeGridView = React.forwardRef<
     state: {
       sorting,
       columnFilters
-    }
-  } as any)
+    },
+    filterFns: {
+      dateRange: (row, id, value: [Date, Date]) => {
+        const cellValue = row.getValue(id) as string
+        const date = new Date(cellValue)
+        return date >= value[0] && date <= value[1]
+      },
+    },
+  })
 
   if (isLoading) {
     return (
@@ -1171,3 +1176,7 @@ export const AccountingIncomeGridView = React.forwardRef<
     </div>
   )
 })
+
+AccountingIncomeGridView.displayName = "AccountingIncomeGridView";
+
+export { AccountingIncomeGridView };

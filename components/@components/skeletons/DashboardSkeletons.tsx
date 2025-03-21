@@ -2,7 +2,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Card } from "@/components/ui/card"
 import { EvolutionChartSkeleton } from "../evolution/EvolutionChart"
 import { EvolutionSummarySkeleton } from "../evolution/EvolutionSummary"
-import { useEffect, useState } from "react"
 
 export function UpcomingEventsSkeletonDashboard() {
   // Version simplifiée pour le dashboard, basée sur la capture d'écran

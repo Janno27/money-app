@@ -28,7 +28,6 @@ import {
   Row,
 } from "@tanstack/react-table"
 import { Card } from "@/components/ui/card"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { ChevronDown, ChevronRight } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -42,8 +41,6 @@ interface AccountingGridViewProps {
   comparisonMode: ComparisonMode
   selectedMonths: string[]
   className?: string
-  onSearchChange?: (value: string) => void
-  onDateRangeChange?: (range: { from: Date | null; to: Date | null }) => void
 }
 
 interface CategoryData {
@@ -107,8 +104,6 @@ export const AccountingGridView = React.forwardRef<
   comparisonMode,
   selectedMonths,
   className,
-  onSearchChange,
-  onDateRangeChange
 }, ref) => {
   const [data, setData] = React.useState<CategoryData[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
@@ -317,7 +312,7 @@ export const AccountingGridView = React.forwardRef<
 
   React.useEffect(() => {
     fetchData()
-  }, [dateRange, searchQuery, isIncome])
+  }, [dateRange, searchQuery, isIncome, fetchData])
 
   // Pour résoudre le problème du useEffect nettoyage ref
   React.useEffect(() => {
@@ -546,7 +541,7 @@ export const AccountingGridView = React.forwardRef<
     
     // Combiner toutes les colonnes
     return [categoryColumn, ...yearColumns, ...monthColumns]
-  }, [availableYears, expandedYears, expandedCategories, comparisonMode, selectedMonths, isIncome, toggleCategory, toggleYear, months])
+  }, [availableYears, expandedYears, expandedCategories, comparisonMode, selectedMonths, toggleCategory, toggleYear, months])
 
   // Créer la table
   const table = useReactTable({
@@ -633,7 +628,6 @@ export const AccountingGridView = React.forwardRef<
 
   // Trouver l'année active
   const activeYear = Array.from(expandedYears)[0] || 0
-  const activeYearIndex = availableYears.findIndex(year => year === activeYear)
 
   return (
     <div style={{ height: '100%', paddingTop: '1rem', paddingBottom: '1rem' }} className={className}>

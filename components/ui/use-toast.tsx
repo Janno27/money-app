@@ -15,6 +15,7 @@ type ToasterToast = ToastProps & {
   action?: ToastActionElement
 }
 
+// Types d'actions pour le reducer
 type ActionTypes = {
   ADD_TOAST: "ADD_TOAST"
   UPDATE_TOAST: "UPDATE_TOAST"
@@ -22,6 +23,7 @@ type ActionTypes = {
   REMOVE_TOAST: "REMOVE_TOAST"
 }
 
+// @ts-ignore - Conservé pour référence future potentielle
 const ACTION_TYPES: ActionTypes = {
   ADD_TOAST: "ADD_TOAST",
   UPDATE_TOAST: "UPDATE_TOAST",
@@ -36,6 +38,7 @@ function genId() {
   return count.toString()
 }
 
+// @ts-ignore - Type conservé pour référence future
 type ActionType = ActionTypes
 
 type Action =

@@ -9,9 +9,8 @@ import {
 import { EvolutionSummary } from "@/components/@components/evolution/EvolutionSummary"
 import { EvolutionChart } from "@/components/@components/evolution/EvolutionChart"
 import { UpcomingEvents, UpcomingEventsSkeleton } from "@/components/@components/calendar/UpcomingEvents"
-import { NotesStack } from "@/components/@components/notes/NotesStack"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { Note } from "@/components/@components/notes/types"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { format } from "date-fns"
@@ -60,6 +59,32 @@ export default function DashboardPage() {
   const [isAddIncomeOpen, setIsAddIncomeOpen] = useState(false)
   const router = useRouter()
 
+  // Utiliser useCallback pour fetchEvents
+  const fetchEvents = useCallback(async () => {
+    setIsEventsLoading(true)
+    try {
+      const { data: eventsData } = await supabase
+        .from('events')
+        .select(`
+          *,
+          participants:event_participants(
+            user:users(id, name, avatar)
+          )
+        `)
+        .gte('start_date', new Date().toISOString())
+        .order('start_date', { ascending: true })
+        .limit(5)
+
+      if (eventsData) {
+        setEvents(eventsData)
+      }
+    } catch (error) {
+      console.error("Erreur lors du chargement des événements:", error)
+    } finally {
+      setIsEventsLoading(false)
+    }
+  }, [supabase, setEvents, setIsEventsLoading])
+
   useEffect(() => {
     const fetchUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -73,31 +98,6 @@ export default function DashboardPage() {
         if (userData?.name) {
           setUserName(userData.name.split(' ')[0]) // On prend que le prénom
         }
-      }
-    }
-
-    const fetchEvents = async () => {
-      setIsEventsLoading(true)
-      try {
-        const { data: eventsData } = await supabase
-          .from('events')
-          .select(`
-            *,
-            participants:event_participants(
-              user:users(id, name, avatar)
-            )
-          `)
-          .gte('start_date', new Date().toISOString())
-          .order('start_date', { ascending: true })
-          .limit(5)
-
-        if (eventsData) {
-          setEvents(eventsData)
-        }
-      } catch (error) {
-        console.error("Erreur lors du chargement des événements:", error)
-      } finally {
-        setIsEventsLoading(false)
       }
     }
 
@@ -183,39 +183,7 @@ export default function DashboardPage() {
     fetchEvents()
     fetchNotes()
     fetchTransactions()
-  }, [supabase])
-
-  const handleUpdateNote = async (id: string, updates: Partial<Note>) => {
-    try {
-      await supabase
-        .from('notes')
-        .update(updates)
-        .eq('id', id)
-      
-      // Mettre à jour la note dans l'état local
-      setNotes(prevNotes => 
-        prevNotes.map(note => 
-          note.id === id ? { ...note, ...updates } : note
-        )
-      )
-    } catch (error) {
-      console.error("Erreur lors de la mise à jour de la note:", error)
-    }
-  }
-
-  const handleDeleteNote = async (id: string) => {
-    try {
-      await supabase
-        .from('notes')
-        .delete()
-        .eq('id', id)
-      
-      // Supprimer la note de l'état local
-      setNotes(prevNotes => prevNotes.filter(note => note.id !== id))
-    } catch (error) {
-      console.error("Erreur lors de la suppression de la note:", error)
-    }
-  }
+  }, [supabase, fetchEvents])
 
   const handleCreateNote = async () => {
     try {
@@ -223,11 +191,15 @@ export default function DashboardPage() {
       
       if (!user) return
       
-      // Créer une nouvelle note
+      // Générer un UUID pour la nouvelle note
+      const noteId = crypto.randomUUID()
+      
+      // Créer une nouvelle note avec un contenu par défaut
       const { data: newNote, error } = await supabase
         .from('notes')
         .insert({
-          content: '',
+          id: noteId,
+          content: 'Nouvelle note...',  // Ajouter un contenu par défaut
           color: 'yellow',
           position: { x: 0, y: 0 },
           user_id: user.id,
@@ -242,20 +214,27 @@ export default function DashboardPage() {
         `)
         .single()
       
-      if (error) throw error
+      if (error) {
+        console.error("Erreur détaillée:", error)
+        throw error
+      }
+      
+      // Vérification supplémentaire que newNote a bien été créé
+      if (!newNote) {
+        console.error("La note a été créée mais aucune donnée n'a été retournée")
+        return
+      }
       
       // Ajouter la nouvelle note à l'état local avec le format correctement transformé
-      if (newNote) {
-        const noteWithFormattedUser = {
-          ...newNote,
-          user: {
-            id: newNote.users?.id,
-            name: newNote.users?.name || "Utilisateur",
-            avatar: newNote.users?.avatar
-          }
-        };
-        setNotes(prevNotes => [noteWithFormattedUser, ...prevNotes])
-      }
+      const noteWithFormattedUser = {
+        ...newNote,
+        user: {
+          id: newNote.users?.id || user.id,
+          name: newNote.users?.name || "Utilisateur",
+          avatar: newNote.users?.avatar || null
+        }
+      };
+      setNotes(prevNotes => [noteWithFormattedUser, ...prevNotes])
     } catch (error) {
       console.error("Erreur lors de la création de la note:", error)
     }
@@ -470,7 +449,32 @@ export default function DashboardPage() {
                                     </div>
                                   </div>
                                   <div className="flex-1 overflow-auto">
-                                    <p className="text-xs text-slate-700 dark:text-slate-200">{note.content || "Écrivez votre note ici..."}</p>
+                                    <textarea
+                                      className="w-full h-full text-xs text-slate-700 dark:text-slate-200 bg-transparent border-0 resize-none focus:outline-none focus:ring-0"
+                                      value={note.content || ""}
+                                      placeholder="Écrivez votre note ici..."
+                                      onChange={(e) => {
+                                        const updatedNotes = [...notes];
+                                        updatedNotes[currentNoteIndex] = {
+                                          ...updatedNotes[currentNoteIndex],
+                                          content: e.target.value
+                                        };
+                                        setNotes(updatedNotes);
+                                        
+                                        // Mettre à jour la note dans la base de données
+                                        const updateNote = async () => {
+                                          try {
+                                            await supabase
+                                              .from('notes')
+                                              .update({ content: e.target.value })
+                                              .eq('id', note.id);
+                                          } catch (error) {
+                                            console.error("Erreur lors de la mise à jour de la note:", error);
+                                          }
+                                        };
+                                        updateNote();
+                                      }}
+                                    />
                                   </div>
                                 </div>
                               </Card>
@@ -511,27 +515,7 @@ export default function DashboardPage() {
       <AddEventDialog
         open={isAddEventOpen}
         onOpenChange={setIsAddEventOpen}
-        onSuccess={() => {
-          // Rafraîchir les événements lors de l'ajout réussi
-          const fetchEvents = async () => {
-            const { data: eventsData } = await supabase
-              .from('events')
-              .select(`
-                *,
-                participants:event_participants(
-                  user:users(id, name, avatar)
-                )
-              `)
-              .gte('start_date', new Date().toISOString())
-              .order('start_date', { ascending: true })
-              .limit(5)
-
-            if (eventsData) {
-              setEvents(eventsData)
-            }
-          }
-          fetchEvents()
-        }}
+        onSuccess={fetchEvents}
       />
 
       {/* Add Transaction Dialogs */}

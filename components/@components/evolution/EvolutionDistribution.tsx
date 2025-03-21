@@ -1,12 +1,9 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { ChevronRight, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
-import { formatCurrency } from "@/lib/format"
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface Category {
@@ -33,9 +30,6 @@ export function EvolutionDistribution({ showAllSubcategories }: EvolutionDistrib
   const [incomeCategories, setIncomeCategories] = useState<Category[]>([])
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
   const [isLoading, setIsLoading] = useState(true)
-  const [totalExpenses, setTotalExpenses] = useState(0)
-  const [totalIncome, setTotalIncome] = useState(0)
-  const [activeTab, setActiveTab] = useState<'expenses' | 'income'>('expenses')
   const supabase = createClientComponentClient()
 
   const toggleCategory = (categoryId: string) => {
@@ -48,7 +42,7 @@ export function EvolutionDistribution({ showAllSubcategories }: EvolutionDistrib
     setExpandedCategories(newExpanded)
   }
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true)
     try {
       const currentYear = new Date().getFullYear()
@@ -98,9 +92,6 @@ export function EvolutionDistribution({ showAllSubcategories }: EvolutionDistrib
         }
       })
 
-      setTotalExpenses(totalExpensesSum)
-      setTotalIncome(totalIncomeSum)
-
       const processCategories = (
         totals: { [key: string]: number },
         subTotals: { [key: string]: { [key: string]: number } },
@@ -136,16 +127,15 @@ export function EvolutionDistribution({ showAllSubcategories }: EvolutionDistrib
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [supabase])
 
   useEffect(() => {
     fetchData()
-  }, [])
+  }, [fetchData])
 
   const renderCategory = (category: Category) => {
     const isExpanded = expandedCategories.has(category.id)
     const hasSubcategories = category.subcategories.length > 0
-    const isExpensesTab = activeTab === 'expenses'
 
     return (
       <div key={category.id} className="space-y-1.5 mb-3">
@@ -215,7 +205,7 @@ export function EvolutionDistribution({ showAllSubcategories }: EvolutionDistrib
     )
   }
 
-  const renderAllSubcategories = (categories: Category[], isExpenses: boolean) => {
+  const renderAllSubcategories = (categories: Category[]) => {
     const allSubcategories = categories.flatMap(category => 
       category.subcategories.map(sub => ({
         ...sub,
@@ -260,7 +250,6 @@ export function EvolutionDistribution({ showAllSubcategories }: EvolutionDistrib
       <Tabs 
         defaultValue="expenses" 
         className="h-full flex flex-col"
-        onValueChange={(value) => setActiveTab(value as 'expenses' | 'income')}
       >
         <div className="flex-none">
           <TabsList className="w-full grid grid-cols-2 bg-slate-100 dark:bg-slate-800">
@@ -288,7 +277,7 @@ export function EvolutionDistribution({ showAllSubcategories }: EvolutionDistrib
             <ScrollArea className="h-full w-full" type="always">
               <div className="pr-4 pb-12">
                 {showAllSubcategories ? (
-                  renderAllSubcategories(expenseCategories, true)
+                  renderAllSubcategories(expenseCategories)
                 ) : (
                   expenseCategories.map(renderCategory)
                 )}
@@ -304,7 +293,7 @@ export function EvolutionDistribution({ showAllSubcategories }: EvolutionDistrib
             <ScrollArea className="h-full w-full" type="always">
               <div className="pr-4 pb-12">
                 {showAllSubcategories ? (
-                  renderAllSubcategories(incomeCategories, false)
+                  renderAllSubcategories(incomeCategories)
                 ) : (
                   incomeCategories.map(renderCategory)
                 )}

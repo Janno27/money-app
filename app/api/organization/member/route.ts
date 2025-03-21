@@ -65,13 +65,12 @@ export async function POST(request: Request) {
     })
     
     // Vérifier/attendre que l'utilisateur soit bien présent dans public.users
-    let publicUserData
     let attempts = 0
     const maxAttempts = 3
     
     while (attempts < maxAttempts) {
       attempts++
-      const { data: publicUser, error: publicUserError } = await supabaseAdmin
+      const { data: publicUser, error: userError } = await supabaseAdmin
         .from('users')
         .select('*')
         .eq('id', user_id)
@@ -79,7 +78,6 @@ export async function POST(request: Request) {
         
       if (publicUser) {
         console.log("Utilisateur trouvé dans public.users:", publicUser)
-        publicUserData = publicUser
         break
       }
       
@@ -133,10 +131,10 @@ export async function POST(request: Request) {
       message: 'Utilisateur ajouté à l\'organisation avec succès',
       data: memberData
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Erreur dans l\'API /api/organization/member:', error)
     return NextResponse.json(
-      { error: error.message || 'Une erreur est survenue' },
+      { error: error instanceof Error ? error.message : 'Une erreur est survenue' },
       { status: 500 }
     )
   }

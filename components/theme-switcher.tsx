@@ -32,7 +32,8 @@ export function ThemeSwitcher() {
     )
   }
 
-  const isExpanded = state === "expanded"
+  // Variable non utilisée
+  // const isExpanded = state === "expanded"
   const isDark = resolvedTheme === "dark"
 
   return (

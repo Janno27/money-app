@@ -1,25 +1,20 @@
 "use client"
 
 import * as React from "react"
-import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useRouter } from "next/navigation"
 import { toast } from "@/components/ui/use-toast"
 import Image from "next/image"
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import { motion, AnimatePresence } from "framer-motion"
-import { ArrowLeft, Mail, CheckCircle, Lock } from "lucide-react"
+import { ArrowLeft, Mail, Lock } from "lucide-react"
 import { getSupabaseClient, signInWithPassword, resetPasswordForEmail } from "@/lib/supabase/client"
 import { DiagnosticButton } from '@/components/ui/diagnostic-button'
 
@@ -511,13 +506,13 @@ export function LoginForm({
                     </Button>
                     
                     <div className="text-center text-sm">
-                      Vous n'avez pas de compte ?{" "}
+                      Vous n&apos;avez pas de compte ?{" "}
                       <button 
                         type="button"
                         onClick={switchToRegister} 
                         className="underline underline-offset-4 text-blue-600"
                       >
-                        S'inscrire
+                        S&apos;inscrire
                       </button>
                     </div>
                   </form>
@@ -684,13 +679,13 @@ export function LoginForm({
                     </div>
                     
                     <div className="bg-blue-50 p-4 rounded-md text-blue-700 text-sm mt-4">
-                      <p>Veuillez cliquer sur le lien dans l'email pour activer votre compte.</p>
-                      <p className="mt-2">Si vous ne trouvez pas l'email, vérifiez votre dossier de spam.</p>
+                      <p>Veuillez cliquer sur le lien dans l&apos;email pour activer votre compte.</p>
+                      <p className="mt-2">Si vous ne trouvez pas l&apos;email, vérifiez votre dossier de spam.</p>
                     </div>
                     
                     <div className="text-center space-y-4 mt-4">
                       <p className="text-sm text-muted-foreground flex items-center justify-center">
-                        Vous n'avez pas reçu d'email ? 
+                        Vous n&apos;avez pas reçu d&apos;email ? 
                         <Button 
                           variant="link" 
                           className="p-0 h-auto ml-1"
@@ -717,7 +712,7 @@ export function LoginForm({
                             }
                           }}
                         >
-                          Renvoyer l'email
+                          Renvoyer l&apos;email
                         </Button>
                       </p>
                     </div>
@@ -792,7 +787,7 @@ export function LoginForm({
                         </Button>
                         
                         <p className="text-sm text-muted-foreground text-center">
-                          Vous n'avez pas reçu d'email ? 
+                          Vous n&apos;avez pas reçu d&apos;email ? 
                           <Button 
                             variant="link" 
                             className="p-0 h-auto ml-1"
@@ -821,7 +816,7 @@ export function LoginForm({
                               }
                             }}
                           >
-                            Renvoyer l'email
+                            Renvoyer l&apos;email
                           </Button>
                         </p>
                       </div>

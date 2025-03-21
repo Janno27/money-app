@@ -1,12 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
+import { useState, useEffect, useCallback } from "react"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { format, addMonths, startOfMonth, endOfMonth, parse } from "date-fns"
+import { format, addMonths, startOfMonth, parse } from "date-fns"
 import { fr } from "date-fns/locale"
-import { formatCurrency } from "@/lib/format"
 import {
   Tooltip,
   TooltipContent,
@@ -43,11 +40,7 @@ export function PlannerSummary({ monthsAhead = 6 }: PlannerSummaryProps) {
   const [error, setError] = useState<string | null>(null)
   const supabase = createClientComponentClient()
 
-  useEffect(() => {
-    fetchSummaryData()
-  }, [monthsAhead])
-
-  const fetchSummaryData = async () => {
+  const fetchSummaryData = useCallback(async () => {
     setIsLoading(true)
     try {
       // 1. Récupérer les données réelles de Supabase
@@ -210,7 +203,11 @@ export function PlannerSummary({ monthsAhead = 6 }: PlannerSummaryProps) {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [supabase, monthsAhead])
+
+  useEffect(() => {
+    fetchSummaryData()
+  }, [fetchSummaryData])
 
   const formatCurrencyValue = (amount: number) => {
     return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount)
@@ -224,12 +221,6 @@ export function PlannerSummary({ monthsAhead = 6 }: PlannerSummaryProps) {
     // Calcul de la date de fin en fonction de la période sélectionnée
     const endDate = addMonths(new Date(), monthsAhead)
     return format(endDate, 'MMMM yyyy', { locale: fr })
-  }
-  
-  const formatMoisLabel = (moisStr: string) => {
-    // Convertir de 'YYYY-MM' à 'Mois YYYY'
-    const date = parse(moisStr, 'yyyy-MM', new Date())
-    return format(date, 'MMMM yyyy', { locale: fr })
   }
 
   if (isLoading) {
@@ -320,7 +311,7 @@ export function PlannerSummary({ monthsAhead = 6 }: PlannerSummaryProps) {
                     <p className="text-sm font-medium mb-1">Calcul du solde estimé</p>
                     <p className="text-xs">
                       Le solde estimé représente la différence entre tous les revenus et toutes les dépenses, 
-                      incluant à la fois les transactions déjà réalisées et les prévisions jusqu'au {getFutureDate()}.
+                      incluant à la fois les transactions déjà réalisées et les prévisions jusqu&apos;au {getFutureDate()}.
                     </p>
                   </TooltipContent>
                 </Tooltip>
@@ -329,7 +320,7 @@ export function PlannerSummary({ monthsAhead = 6 }: PlannerSummaryProps) {
                 {data ? formatCurrencyValue(data.soldeEstime) : "N/A"}
               </div>
               <div className="text-[0.65rem] text-muted-foreground">
-                Prévision sur {monthsAhead} mois (jusqu'au {getFutureDate()})
+                Prévision sur {monthsAhead} mois (jusqu&apos;au {getFutureDate()})
               </div>
             </div>
 
@@ -355,7 +346,7 @@ export function PlannerSummary({ monthsAhead = 6 }: PlannerSummaryProps) {
                       <TooltipContent className="max-w-[400px] p-4" side="top" sideOffset={10} align="start">
                         <p className="text-sm font-medium mb-1">Méthodologie de prévision des revenus</p>
                         <p className="text-xs mb-2">
-                          Les prévisions sont générées avec l'algorithme Facebook Prophet, un outil d'analyse de séries temporelles avancé.
+                          Les prévisions sont générées avec l&apos;algorithme Facebook Prophet, un outil d&apos;analyse de séries temporelles avancé.
                         </p>
                         <ul className="text-xs space-y-1 list-disc pl-4">
                           <li>Analyse de vos historiques de transactions pour identifier des tendances</li>
@@ -401,8 +392,8 @@ export function PlannerSummary({ monthsAhead = 6 }: PlannerSummaryProps) {
                           <li>Analyse de vos habitudes de dépenses par catégorie</li>
                           <li>Identification des dépenses récurrentes (loyer, abonnements, etc.)</li>
                           <li>Détection des saisonnalités (hausse en période de vacances, etc.)</li>
-                          <li>Ajustement en fonction de l'historique récent pour plus de précision</li>
-                          <li>Calcul d'intervalles de confiance pour estimer les variations possibles</li>
+                          <li>Ajustement en fonction de l&apos;historique récent pour plus de précision</li>
+                          <li>Calcul d&apos;intervalles de confiance pour estimer les variations possibles</li>
                         </ul>
                       </TooltipContent>
                     </Tooltip>
