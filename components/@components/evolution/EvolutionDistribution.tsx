@@ -71,11 +71,11 @@ export function EvolutionDistribution({ showAllSubcategories }: EvolutionDistrib
       transactions?.forEach(transaction => {
         const amount = Math.abs(transaction.final_amount)
         const categoryId = transaction.category.id
-        // @ts-ignore - Variable non utilisée
-        const categoryName = transaction.category.name
+        // @ts-expect-error - Variable conservée pour usage futur potentiel
+        const _categoryName = transaction.category.name
         const subcategoryId = transaction.subcategory?.id
-        // @ts-ignore - Variable non utilisée
-        const subcategoryName = transaction.subcategory?.name
+        // @ts-expect-error - Variable conservée pour usage futur potentiel
+        const _subcategoryName = transaction.subcategory?.name
 
         if (transaction.is_income) {
           totalIncomeSum += amount

@@ -2,10 +2,6 @@
 
 import * as React from "react"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-// @ts-ignore - Imports conservés pour usage futur
-import { format } from "date-fns"
-// @ts-ignore - Imports conservés pour usage futur
-import { fr } from "date-fns/locale"
 import { formatCurrency } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { ComparisonMode } from "./AccountingFilters"
@@ -27,10 +23,7 @@ import {
   getSortedRowModel,
   ColumnFiltersState,
   getFilteredRowModel,
-  Row,
 } from "@tanstack/react-table"
-// @ts-ignore - Import non utilisé actuellement
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { ChevronDown, ChevronRight, ArrowUpDown } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -44,10 +37,6 @@ interface AccountingGridViewProps {
   comparisonMode: ComparisonMode
   selectedMonths: string[]
   className?: string
-  // @ts-ignore - Props conservés pour usage futur
-  onSearchChange?: (value: string) => void
-  // @ts-ignore - Props conservés pour usage futur
-  onDateRangeChange?: (range: { from: Date | null; to: Date | null }) => void
   isMaximized?: boolean
 }
 
@@ -76,7 +65,7 @@ interface CategoryData {
   }[]
 }
 
-// @ts-ignore - Type défini mais non utilisé actuellement
+// @ts-expect-error - Type défini mais non utilisé actuellement
 interface ColumnMeta<TData, TValue> {
   style?: React.CSSProperties;
   monthName?: string;
@@ -115,10 +104,6 @@ const AccountingGridView = React.forwardRef<
   comparisonMode,
   selectedMonths,
   className,
-  // @ts-ignore - Props conservés pour usage futur
-  onSearchChange,
-  // @ts-ignore - Props conservés pour usage futur
-  onDateRangeChange,
   isMaximized = false
 }, ref) => {
   const supabase = createClientComponentClient()

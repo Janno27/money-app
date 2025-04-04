@@ -121,7 +121,7 @@ export function CategoryForecast({ monthsAhead = 6, className }: CategoryForecas
         const subcategoryMap = new Map<string, CategoryData>();
         
         // Traiter les transactions réelles
-        // @ts-ignore - Structure complexe des données Supabase
+        // @ts-expect-error - Structure complexe des données Supabase
         transactionsData?.forEach((transaction: Transaction) => {
           if (!transaction.subcategory) return;
           

@@ -4,7 +4,7 @@ const nextConfig = {
     // typedRoutes a été retiré car incompatible avec Turbopack
   },
   images: {
-    domains: ['ouiwpkxvjxcfbypmurap.supabase.co']
+    domains: ['ouiwpkxvjxcfbypmurap.supabase.co', 'i.ibb.co']
   }
 }
 

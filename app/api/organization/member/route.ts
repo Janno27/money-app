@@ -70,7 +70,7 @@ export async function POST(request: Request) {
     
     while (attempts < maxAttempts) {
       attempts++
-      const { data: publicUser, error: userError } = await supabaseAdmin
+      const { data: publicUser, error: _userError } = await supabaseAdmin
         .from('users')
         .select('*')
         .eq('id', user_id)

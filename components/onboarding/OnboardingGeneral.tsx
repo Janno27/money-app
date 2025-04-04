@@ -268,7 +268,7 @@ interface SecondGroupProps {
   onComplete?: () => void;
 }
 
-function _SecondGroup({ show, theme, onComplete }: SecondGroupProps) {
+function SecondGroup({ show, theme, onComplete }: SecondGroupProps) {
   useEffect(() => {
     if (show) {
       // Démarrer les animations du second groupe
@@ -324,7 +324,7 @@ interface ThirdGroupProps {
   onComplete?: () => void;
 }
 
-function _ThirdGroup({ show, theme, onComplete }: ThirdGroupProps) {  
+function ThirdGroup({ show, theme, onComplete }: ThirdGroupProps) {  
   useEffect(() => {
     if (show) {
       // Démarrer les animations du troisième groupe
@@ -380,7 +380,7 @@ interface FinalRevealProps {
   onComplete: () => void;
 }
 
-function _FinalReveal({ show, theme, onComplete }: FinalRevealProps) {
+function FinalReveal({ show, theme, onComplete }: FinalRevealProps) {
   const [textOpacity, setTextOpacity] = useState(0);
   const [scale, setScale] = useState(0.8);
   const [fireworks, setFireworks] = useState<{ id: number; x: number; y: number; size: number; color: string }[]>([]);
@@ -616,7 +616,7 @@ interface ImportedData {
 }
 
 // Remplacer le contenu de la modale de validation finale par un résumé et feux d'artifice
-function _SuccessImportContent({ year, totalCategories, totalSubcategories }: { 
+function SuccessImportContent({ year, totalCategories, totalSubcategories }: { 
   year: string; 
   totalCategories: number; 
   totalSubcategories: number; 
@@ -978,7 +978,7 @@ export function OnboardingGeneral({ children }: OnboardingGeneralProps) {
     }
   };
 
-  const copyInvitationLink = (email: string) => {
+  const copyInvitationLink = (_email: string) => {
     if (copySuccess) {
       navigator.clipboard.writeText(copySuccess);
       toast({
@@ -994,8 +994,8 @@ export function OnboardingGeneral({ children }: OnboardingGeneralProps) {
     return emailRegex.test(email);
   };
 
-  // @ts-ignore - Fonction préservée pour une utilisation future
-  const handleInitializationAndContinue = () => {
+  // @ts-expect-error - Fonction préservée pour une utilisation future
+  const _handleInitializationAndContinue = () => {
     console.log(`Initialisation avec l&apos;option: ${initOption}`);
     
     window.dispatchEvent(new CustomEvent('onboarding-next-step'));
@@ -1163,12 +1163,12 @@ export function OnboardingGeneral({ children }: OnboardingGeneralProps) {
     }));
   };
 
-  const handleAddNewCategory = async () => {
+  const _handleAddNewCategory = async () => {
     if (!newCategory.trim()) return;
     
     try {
       // Ajouter la nouvelle catégorie à Supabase
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('categories')
         .insert([{ 
           name: newCategory.trim(),

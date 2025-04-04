@@ -1,7 +1,6 @@
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { cookies } from 'next/headers'
 
 // Cache pour les sessions, avec une durée de vie de 1 minute
 const sessionCache = new Map<string, { session: any, timestamp: number }>()

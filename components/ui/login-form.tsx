@@ -827,16 +827,6 @@ export function LoginForm({
             {/* Bouton de diagnostic en mode développement */}
             <DiagnosticButton />
           </div>
-          <div className="relative hidden md:block">
-            <Image
-              src="https://i.ibb.co/3mC5prsD/IMG-2847.jpg"
-              alt="Image"
-              className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
-              width={1200}
-              height={800}
-              priority
-            />
-          </div>
         </CardContent>
       </Card>
     </div>

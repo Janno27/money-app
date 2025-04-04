@@ -24,8 +24,8 @@ export default function JoinPage() {
   const [password, setPassword] = useState("")
   const [name, setName] = useState("")
   const [organization, setOrganization] = useState<{ id: string, name: string } | null>(null)
-  // @ts-ignore - Conservé pour usage futur potentiel
-  const [userId, setUserId] = useState("")
+  // @ts-expect-error - Conservé pour usage futur potentiel
+  const [_userId, setUserId] = useState("")
   
   const joinOrganization = useCallback(async (userId: string, organizationId: string) => {
     try {
@@ -84,7 +84,7 @@ export default function JoinPage() {
       console.error("Erreur lors de l'ajout à l'organisation:", err)
       setError("Une erreur est survenue lors de l'acceptation de l'invitation.")
     }
-  }, [router, supabase, toast])
+  }, [router, supabase, toast, organization?.name])
   
   useEffect(() => {
     const init = async () => {

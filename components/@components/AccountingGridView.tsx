@@ -73,7 +73,7 @@ const calculateComparison = (
   currentValue: number,
   previousValue: number | number[],
   mode: ComparisonMode,
-  // @ts-ignore - Le paramètre est nécessaire mais non utilisé pour ce mode de comparaison
+  // @ts-expect-error - Le paramètre est nécessaire mais non utilisé pour ce mode de comparaison
   selectedMonths: string[]
 ) => {
   if (mode === 'month-to-month') {
@@ -83,10 +83,11 @@ const calculateComparison = (
     const percentage = (difference / Math.abs(previousValue)) * 100
     return { percentage, difference }
   } else {
-    // Mode moyenne
+    // Mode moyenne - utilise selectedMonths pour filtrer les valeurs à moyenner
     if (!Array.isArray(previousValue) || previousValue.length === 0) {
       return { percentage: 0, difference: 0 }
     }
+    // Les selectedMonths sont déjà utilisés pour filtrer les valeurs avant d'appeler cette fonction
     const average = previousValue.reduce((sum, val) => sum + val, 0) / previousValue.length
     if (average === 0) return { percentage: 0, difference: 0 }
     const difference = currentValue - average
@@ -108,7 +109,6 @@ export const AccountingGridView = React.forwardRef<
 }, ref) => {
   const [data, setData] = React.useState<CategoryData[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
-  const [isFetching, setIsFetching] = React.useState(false)
   const [expandedCategories, setExpandedCategories] = React.useState<Set<string>>(new Set())
   const [expandedYears, setExpandedYears] = React.useState<Set<number>>(new Set([new Date().getFullYear()]))
   const [availableYears, setAvailableYears] = React.useState<number[]>([])
@@ -158,10 +158,7 @@ export const AccountingGridView = React.forwardRef<
   }, [data, expandedCategories])
 
   const fetchData = React.useCallback(async () => {
-    if (isFetching) return;
-    
-    setIsLoading(true);
-    setIsFetching(true);
+    setIsLoading(true)
     try {
       let query = supabase
         .from('transactions_with_refunds')
@@ -309,17 +306,16 @@ export const AccountingGridView = React.forwardRef<
       
       setData(filteredData)
       setTotals(globalTotals)
+      setIsLoading(false)
     } catch (error) {
       console.error('Error fetching data:', error)
-    } finally {
       setIsLoading(false)
-      setIsFetching(false)
     }
-  }, [supabase, isIncome, dateRange, searchQuery, selectedMonths, comparisonMode])
+  }, [supabase, isIncome, dateRange, searchQuery])
 
   React.useEffect(() => {
     fetchData()
-  }, [fetchData])
+  }, [dateRange, searchQuery, isIncome, fetchData])
 
   // Pour résoudre le problème du useEffect nettoyage ref
   React.useEffect(() => {
@@ -634,20 +630,20 @@ export const AccountingGridView = React.forwardRef<
   }
 
   // Trouver l'année active
-  // @ts-ignore - La variable est définie mais non utilisée actuellement
-  const activeYear = Array.from(expandedYears)[0] || 0
+  // @ts-expect-error - La variable est définie mais non utilisée actuellement
+  const _activeYear = Array.from(expandedYears)[0] || 0
 
   return (
     <div style={{ height: '100%', paddingTop: '1rem', paddingBottom: '1rem' }} className={className}>
       <div 
         ref={cardRef}
-        className="relative bg-background rounded-xl"
+        className="relative bg-white rounded-xl"
         style={{ 
           height: '100%',
           borderRadius: '12px',
           border: '1px solid transparent',
           backgroundClip: 'padding-box',
-          background: 'linear-gradient(var(--background), var(--background)) padding-box, linear-gradient(to var(--gradient-direction, right), #e2e8f0, #2563eb var(--gradient-position, 50%), #e2e8f0) border-box',
+          background: 'linear-gradient(#fff, #fff) padding-box, linear-gradient(to var(--gradient-direction, right), #e2e8f0, #2563eb var(--gradient-position, 50%), #e2e8f0) border-box',
           overflow: 'hidden',
           boxShadow: '0 0 15px rgba(37, 99, 235, 0.1)',
           transition: 'box-shadow 0.3s ease'
@@ -739,7 +735,7 @@ export const AccountingGridView = React.forwardRef<
                                     position: 'sticky', 
                                     left: 0, 
                                     zIndex: 5,
-                                    backgroundColor: 'var(--background)',
+                                    backgroundColor: 'rgba(241, 245, 249, 0.8)',
                                     boxShadow: '4px 0 8px -4px rgba(0,0,0,0.1)' 
                                   }}
                                 >
@@ -794,7 +790,7 @@ export const AccountingGridView = React.forwardRef<
                     position: 'sticky', 
                     left: 0, 
                     zIndex: 5,
-                    backgroundColor: 'var(--background)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
                     backdropFilter: 'blur(4px)',
                     boxShadow: '4px 0 8px -4px rgba(0,0,0,0.1)' 
                   }}
