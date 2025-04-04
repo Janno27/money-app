@@ -53,7 +53,7 @@ interface AnimatedTaskProps {
   onComplete?: () => void;
 }
 
-function AnimatedTask({ icon, title, phrases, theme, onComplete }: AnimatedTaskProps) {
+function AnimatedTask({ icon, title, phrases, theme = 'light', onComplete }: AnimatedTaskProps) {
   const [visiblePhrases, setVisiblePhrases] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [completedPhrases, setCompletedPhrases] = useState<number[]>([]);
@@ -264,11 +264,11 @@ function AnimatedTask({ icon, title, phrases, theme, onComplete }: AnimatedTaskP
 
 interface SecondGroupProps {
   show: boolean;
-  theme: 'light' | 'dark';
+  theme?: 'light' | 'dark';
   onComplete?: () => void;
 }
 
-function SecondGroup({ show, theme, onComplete }: SecondGroupProps) {
+function _SecondGroup({ show, theme = 'light', onComplete }: SecondGroupProps) {
   useEffect(() => {
     if (show) {
       // Démarrer les animations du second groupe
@@ -320,11 +320,11 @@ function SecondGroup({ show, theme, onComplete }: SecondGroupProps) {
 
 interface ThirdGroupProps {
   show: boolean;
-  theme: 'light' | 'dark';
+  theme?: 'light' | 'dark';
   onComplete?: () => void;
 }
 
-function ThirdGroup({ show, theme, onComplete }: ThirdGroupProps) {  
+function _ThirdGroup({ show, theme = 'light', onComplete }: ThirdGroupProps) {  
   useEffect(() => {
     if (show) {
       // Démarrer les animations du troisième groupe
@@ -376,11 +376,11 @@ function ThirdGroup({ show, theme, onComplete }: ThirdGroupProps) {
 
 interface FinalRevealProps {
   show: boolean;
-  theme: 'light' | 'dark';
+  theme?: 'light' | 'dark';
   onComplete: () => void;
 }
 
-function FinalReveal({ show, theme, onComplete }: FinalRevealProps) {
+function _FinalReveal({ show, theme = 'light', onComplete }: FinalRevealProps) {
   const [textOpacity, setTextOpacity] = useState(0);
   const [scale, setScale] = useState(0.8);
   const [fireworks, setFireworks] = useState<{ id: number; x: number; y: number; size: number; color: string }[]>([]);
@@ -616,7 +616,7 @@ interface ImportedData {
 }
 
 // Remplacer le contenu de la modale de validation finale par un résumé et feux d'artifice
-function SuccessImportContent({ year, totalCategories, totalSubcategories }: { 
+function _SuccessImportContent({ year, totalCategories, totalSubcategories }: { 
   year: string; 
   totalCategories: number; 
   totalSubcategories: number; 
@@ -978,7 +978,7 @@ export function OnboardingGeneral({ children }: OnboardingGeneralProps) {
     }
   };
 
-  const copyInvitationLink = (_email: string) => {
+  const copyInvitationLink = (email: string) => {
     if (copySuccess) {
       navigator.clipboard.writeText(copySuccess);
       toast({
@@ -994,7 +994,7 @@ export function OnboardingGeneral({ children }: OnboardingGeneralProps) {
     return emailRegex.test(email);
   };
 
-  // @ts-expect-error - Fonction préservée pour une utilisation future
+  // Fonction préservée pour une utilisation future
   const _handleInitializationAndContinue = () => {
     console.log(`Initialisation avec l&apos;option: ${initOption}`);
     
@@ -1558,7 +1558,7 @@ export function OnboardingGeneral({ children }: OnboardingGeneralProps) {
     }
   };
 
-  const completeImport = async () => {
+  const _completeImport = async () => {
     setImportStatus('processing');
     
     try {
@@ -1714,9 +1714,6 @@ export function OnboardingGeneral({ children }: OnboardingGeneralProps) {
 
   // Fonction pour afficher l'aperçu des données importées
   const DataPreview = ({ data, year }: { data: ImportedData; year: string }) => {
-    // Supprimer l'état expanded et le ref containerRef qui ne sont plus nécessaires
-    const containerRef = React.useRef<HTMLDivElement>(null);
-
     // Catégories considérées comme des revenus
     const incomeCategories = ["Revenus exceptionnels", "Revenus réguliers"];
 

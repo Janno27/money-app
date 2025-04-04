@@ -2,6 +2,8 @@
 
 import * as React from "react"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { format } from "date-fns"
+import { fr } from "date-fns/locale"
 import { formatCurrency } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { ComparisonMode } from "./AccountingFilters"
@@ -23,8 +25,6 @@ import {
   getSortedRowModel,
   ColumnFiltersState,
   getFilteredRowModel,
-  // @ts-ignore - Imports non utilisés
-  TData,
 } from "@tanstack/react-table"
 import { ChevronDown, ChevronRight, ArrowUpDown } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -580,26 +580,6 @@ const AccountingIncomeGridView = React.forwardRef<
     };
   }, []);
 
-  // Fonction pour calculer la différence en pourcentage
-  const calculatePercentDifference = (current: number, reference: number): number => {
-    if (reference === 0) return current > 0 ? 100 : 0
-    return ((current - reference) / Math.abs(reference)) * 100
-  }
-
-  // Fonction pour formater l'affichage du pourcentage
-  const formatPercentage = (value: number): string => {
-    const sign = value > 0 ? '+' : ''
-    return `${sign}${value.toFixed(1)}%`
-  }
-
-  // Fonction pour déterminer la classe de couleur en fonction de la différence
-  const getDifferenceColorClass = (difference: number): string => {
-    if (Math.abs(difference) < 0.5) return 'text-slate-500 dark:text-slate-400' // Pas de changement significatif
-    return difference > 0 
-      ? 'text-green-600 dark:text-green-400' // Augmentation
-      : 'text-red-600 dark:text-red-400'     // Diminution
-  }
-
   // Fonction pour générer la cellule avec comparaison
   const renderMonthCellWithComparison = React.useCallback((
     amount: number, 
@@ -607,6 +587,26 @@ const AccountingIncomeGridView = React.forwardRef<
     comparisonType: 'previous' | 'average',
     isSubcategory: boolean = false
   ) => {
+    // Fonction pour calculer la différence en pourcentage
+    const calculatePercentDifference = (current: number, reference: number): number => {
+      if (reference === 0) return current > 0 ? 100 : 0
+      return ((current - reference) / Math.abs(reference)) * 100
+    }
+
+    // Fonction pour formater l'affichage du pourcentage
+    const formatPercentage = (value: number): string => {
+      const sign = value > 0 ? '+' : ''
+      return `${sign}${value.toFixed(1)}%`
+    }
+
+    // Fonction pour déterminer la classe de couleur en fonction de la différence
+    const getDifferenceColorClass = (difference: number): string => {
+      if (Math.abs(difference) < 0.5) return 'text-slate-500 dark:text-slate-400' // Pas de changement significatif
+      return difference > 0 
+        ? 'text-green-600 dark:text-green-400' // Augmentation
+        : 'text-red-600 dark:text-red-400'     // Diminution
+    }
+    
     const fontSizeClass = isSubcategory ? 'text-xs' : 'text-sm'
     const fontWeightClass = isSubcategory ? 'font-normal' : 'font-medium'
     

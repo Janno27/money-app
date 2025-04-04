@@ -73,7 +73,6 @@ const calculateComparison = (
   currentValue: number,
   previousValue: number | number[],
   mode: ComparisonMode,
-  // @ts-expect-error - Le paramètre est nécessaire mais non utilisé pour ce mode de comparaison
   selectedMonths: string[]
 ) => {
   if (mode === 'month-to-month') {
@@ -87,8 +86,15 @@ const calculateComparison = (
     if (!Array.isArray(previousValue) || previousValue.length === 0) {
       return { percentage: 0, difference: 0 }
     }
-    // Les selectedMonths sont déjà utilisés pour filtrer les valeurs avant d'appeler cette fonction
-    const average = previousValue.reduce((sum, val) => sum + val, 0) / previousValue.length
+    
+    // Filtrer les valeurs en fonction des mois sélectionnés si nécessaire
+    const valuesToUse = selectedMonths.length > 0 
+      ? previousValue.filter((_, index) => selectedMonths.includes(index.toString())) 
+      : previousValue
+    
+    const average = valuesToUse.reduce((sum, val) => sum + val, 0) / 
+                   (valuesToUse.length > 0 ? valuesToUse.length : 1)
+    
     if (average === 0) return { percentage: 0, difference: 0 }
     const difference = currentValue - average
     const percentage = (difference / Math.abs(average)) * 100
@@ -118,6 +124,7 @@ export const AccountingGridView = React.forwardRef<
     years: { [key: number]: number },
     months: { [key: string]: number }
   }>({ years: {}, months: {} })
+  const [_activeYear, setActiveYear] = React.useState(new Date().getFullYear())
   const cardRef = React.useRef<HTMLDivElement>(null)
   const supabase = createClientComponentClient()
 
@@ -628,9 +635,6 @@ export const AccountingGridView = React.forwardRef<
       )
     })
   }
-
-  // Année active (préfixée avec _ car actuellement non utilisée mais pourrait l'être)
-  const [_activeYear, setActiveYear] = React.useState(new Date().getFullYear());
 
   return (
     <div style={{ height: '100%', paddingTop: '1rem', paddingBottom: '1rem' }} className={className}>

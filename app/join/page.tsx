@@ -25,8 +25,6 @@ export default function JoinPage() {
   const [password, setPassword] = useState("")
   const [name, setName] = useState("")
   const [organization, setOrganization] = useState<{ id: string, name: string } | null>(null)
-  // @ts-expect-error - Conservé pour usage futur potentiel
-  const [_userId, setUserId] = useState("")
   
   const joinOrganization = useCallback(async (userId: string, organizationId: string) => {
     try {
