@@ -3,7 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import React, { useState, useEffect, ReactNode, useRef } from "react"
-import { Plus, CheckCircle, ArrowRight, Paperclip, Keyboard, Sparkles, Atom, Sparkle, FileSpreadsheet, X } from "lucide-react"
+import { Plus, CheckCircle, ArrowRight, Paperclip, Keyboard, Sparkles, Atom, Sparkle, FileSpreadsheet, X, Code, Database, CheckCircle2 } from "lucide-react"
 import { OnboardingTour } from "./OnboardingTour"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -451,10 +451,10 @@ function _FinalReveal({ show, theme = 'light', onComplete }: FinalRevealProps) {
         setShowButtons(true);
       }, 2000);
       
-      // Passer à l'étape suivante automatiquement après un délai plus long
+      // Rediriger automatiquement vers le dashboard après un délai
       const nextStepTimer = setTimeout(() => {
-        onComplete();
-      }, 30000); // 30 secondes de délai avant passage automatique
+        window.location.href = '/dashboard';
+      }, 30000); // 30 secondes de délai avant redirection vers dashboard
       
       return () => clearTimeout(nextStepTimer);
     }, 500);
@@ -2065,7 +2065,7 @@ export function OnboardingGeneral({ children }: OnboardingGeneralProps) {
   const steps = [
     {
       title: "Bienvenue sur MoneyApp",
-      description: "Prenez le contrôle de vos finances, simplifiez vos dépenses, anticipez vos revenus, atteignez vos objectifs en toute sérénité.",
+      description: "La meilleure façon de gérer vos finances personnelles et familiales",
       content: (
         <div className="relative w-20 h-20 mb-6">
           <Image 
@@ -2367,113 +2367,128 @@ export function OnboardingGeneral({ children }: OnboardingGeneralProps) {
       content: (
         <div className="flex flex-col items-center justify-center w-full">
           <div className="min-h-[350px] w-full flex flex-col items-center justify-center">
-            <div className="animate-pulse w-16 h-16 rounded-full bg-blue-500/20 flex items-center justify-center mb-4">
-              <Sparkles className="w-8 h-8 text-blue-500" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">Préparation de votre application...</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Nous configurons tout pour vous. Cela ne prendra que quelques instants.
-            </p>
+            {/* Utiliser AnimatedTask pour montrer les étapes de chargement */}
+            {(() => {
+              // Function composant pour utiliser useState à l'intérieur
+              const [currentGroup, setCurrentGroup] = useState(1);
+              const [showFinalReveal, setShowFinalReveal] = useState(false);
+              
+              const handleFirstGroupComplete = () => {
+                setCurrentGroup(2);
+              };
+              
+              const handleSecondGroupComplete = () => {
+                setCurrentGroup(3);
+              };
+              
+              const handleThirdGroupComplete = () => {
+                setShowFinalReveal(true);
+                // Rediriger directement vers l'étape suivante après l'animation
+                setTimeout(() => {
+                  window.dispatchEvent(new CustomEvent('onboarding-next-step'));
+                }, 1500);
+              };
+              
+              return (
+                <>
+                  {currentGroup === 1 && (
+                    <AnimatedTask
+                      icon={<Code className="h-full w-full" />}
+                      title="Configuration initiale"
+                      phrases={[
+                        "Training du modèle… `model.fit(data);` et croisons les doigts.",
+                        "Calcul des projections… `if (revenus > dépenses) console.log(&apos;Chill!&apos;);` ou panique.",
+                        "Chargement des graphiques… `import matplotlib as plt;` ou Google Images."
+                      ]}
+                      theme={theme}
+                      onComplete={handleFirstGroupComplete}
+                    />
+                  )}
+                  
+                  {currentGroup === 2 && (
+                    <AnimatedTask
+                      icon={<Database className="h-full w-full" />}
+                      title="Préparation des données"
+                      phrases={[
+                        "Démarrage du serveur de données… espérons qu'il y ait du café.",
+                        "Normalisation des formats… au moins une chose normalisée dans votre vie.",
+                        "Configuration de la base de données… `SELECT * FROM random_excuses;`"
+                      ]}
+                      theme={theme}
+                      onComplete={handleSecondGroupComplete}
+                    />
+                  )}
+                  
+                  {currentGroup === 3 && !showFinalReveal && (
+                    <AnimatedTask
+                      icon={<Sparkles className="h-full w-full" />}
+                      title="Finalisation"
+                      phrases={[
+                        "Optimisation des performances... on minimise le temps de chargement.",
+                        "Activation des notifications... promis, pas de spam à 3h du matin.",
+                        "Configuration de votre espace... comme chez vous, mais en version numérique."
+                      ]}
+                      theme={theme}
+                      onComplete={handleThirdGroupComplete}
+                    />
+                  )}
+                  
+                  {showFinalReveal && (
+                    <div className="text-center animate-fade-in">
+                      <div className="flex justify-center mb-6">
+                        <div className={cn(
+                          "w-16 h-16 rounded-full flex items-center justify-center",
+                          theme === 'dark' ? "bg-blue-900/30" : "bg-blue-100"
+                        )}>
+                          <CheckCircle2 className={cn(
+                            "h-8 w-8",
+                            theme === 'dark' ? "text-blue-400" : "text-blue-600"
+                          )} />
+                        </div>
+                      </div>
+                      <h3 className={cn(
+                        "text-xl font-semibold mb-2",
+                        theme === 'dark' ? "text-white" : "text-slate-800"
+                      )}>
+                        Configuration terminée
+                      </h3>
+                      <p className={cn(
+                        "text-sm mx-auto max-w-md",
+                        theme === 'dark' ? "text-slate-400" : "text-slate-600"
+                      )}>
+                        Tout est prêt ! Votre application est configurée pour vous offrir la meilleure expérience possible.
+                      </p>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </div>
       ),
       showBackButton: true
     },
     {
-      title: "Vous êtes prêt à démarrer !",
-      description: "Découvrez les fonctionnalités essentielles pour tirer le meilleur parti de MoneyApp",
+      title: "Félicitations !",
+      description: "Votre application est prête à être utilisée",
       content: (
-        <div className="flex flex-col items-center w-full max-w-lg mx-auto space-y-8">
-          <div className={cn(
-            "w-full p-6 rounded-xl border flex flex-col items-center text-center",
-            theme === 'dark' 
-              ? "bg-blue-900/20 border-blue-800" 
-              : "bg-blue-50 border-blue-100"
-          )}>
-            <div className="flex items-center gap-2 mb-3">
-              <Keyboard className={cn(
-                "h-5 w-5",
-                theme === 'dark' ? "text-blue-400" : "text-blue-500"
-              )} />
-              <p className={cn(
-                "text-sm font-medium",
-                theme === 'dark' ? "text-blue-300" : "text-blue-700"
-              )}>
-                Le saviez-vous ?
-              </p>
-            </div>
-            
-            <p className={cn(
-              "text-sm mb-4",
-              theme === 'dark' ? "text-slate-300" : "text-slate-700"
-            )}>
-              Accédez à tout moment à vos notes partagées en utilisant le raccourci
-            </p>
-            
-            <div className="flex items-center gap-2">
-              <div className={cn(
-                "relative flex items-center justify-center w-10 h-10 rounded-md shadow-sm",
-                theme === 'dark' ? "bg-slate-700 border border-slate-600" : "bg-white border border-slate-200"
-              )}>
-                <span className={cn(
-                  "text-xs font-semibold",
-                  theme === 'dark' ? "text-slate-200" : "text-slate-800"
-                )}>CTRL</span>
-              </div>
-              
-              <span className={cn(
-                "text-lg font-medium",
-                theme === 'dark' ? "text-slate-400" : "text-slate-500"
-              )}>+</span>
-              
-              <div className={cn(
-                "relative flex items-center justify-center w-10 h-10 rounded-md shadow-sm",
-                theme === 'dark' ? "bg-slate-700 border border-slate-600" : "bg-white border border-slate-200"
-              )}>
-                <span className={cn(
-                  "text-base font-semibold",
-                  theme === 'dark' ? "text-slate-200" : "text-slate-800"
-                )}>N</span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row items-center gap-4">
-            <Button
-              variant="default"
-              className={cn(
-                "min-w-[180px] h-10 font-medium",
-                theme === 'dark' 
-                  ? "bg-blue-600 hover:bg-blue-700 text-white" 
-                  : "bg-blue-600 hover:bg-blue-700 text-white"
-              )}
-              onClick={() => {
+        <div className="flex flex-col items-center justify-center w-full">
+          <div className="min-h-[350px] w-full">
+            <_FinalReveal 
+              show={true} 
+              theme={theme}
+              onComplete={() => {
                 // Mettre à jour les préférences utilisateur avant de terminer l'onboarding
                 updateUserPreferences();
                 // Lancer l'événement de complétion de l'onboarding
                 window.dispatchEvent(new CustomEvent('onboarding-complete'));
               }}
-            >
-              Commencer
-            </Button>
-            
-            <Button
-              variant="outline"
-              className={cn(
-                "min-w-[180px] h-10 font-medium",
-                theme === 'dark' 
-                  ? "border-slate-700 hover:bg-slate-800 text-slate-300" 
-                  : "border-slate-200 hover:bg-slate-100 text-slate-700"
-              )}
-              onClick={() => window.dispatchEvent(new CustomEvent('onboarding-next-step'))}
-            >
-              Découvrir les fonctionnalités
-            </Button>
+            />
           </div>
         </div>
       ),
-      showBackButton: true
-    },
+      showBackButton: false
+    }
   ]
 
   // Fonction pour mettre à jour les préférences utilisateur quand l'onboarding est terminé
