@@ -2,6 +2,8 @@
 const nextConfig = {
   experimental: {
     // typedRoutes a été retiré car incompatible avec Turbopack
+    // Configuration pour les packages externes
+    serverComponentsExternalPackages: ['@supabase/auth-helpers-nextjs']
   },
   images: {
     domains: ['ouiwpkxvjxcfbypmurap.supabase.co', 'i.ibb.co']
@@ -15,11 +17,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   // Désactiver l'export statique pour certaines pages
-  output: 'standalone',
-  // Configuration des pages qui ne doivent pas être pré-rendues
-  experimental: {
-    serverComponentsExternalPackages: ['@supabase/auth-helpers-nextjs']
-  }
+  output: 'standalone'
 }
 
 module.exports = nextConfig 
