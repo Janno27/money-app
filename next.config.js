@@ -13,6 +13,12 @@ const nextConfig = {
   typescript: {
     // Désactiver les vérifications TypeScript pendant la construction
     ignoreBuildErrors: true,
+  },
+  // Désactiver l'export statique pour certaines pages
+  output: 'standalone',
+  // Configuration des pages qui ne doivent pas être pré-rendues
+  experimental: {
+    serverComponentsExternalPackages: ['@supabase/auth-helpers-nextjs']
   }
 }
 
