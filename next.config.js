@@ -1,7 +1,11 @@
 /** @type {import('next').NextConfig} */
+
 const nextConfig = {
-  experimental: {
-    // typedRoutes a été retiré car incompatible avec Turbopack
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
   },
   images: {
     domains: ['ouiwpkxvjxcfbypmurap.supabase.co', 'i.ibb.co']

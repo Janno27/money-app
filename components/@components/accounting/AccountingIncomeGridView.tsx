@@ -2,8 +2,6 @@
 
 import * as React from "react"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { format } from "date-fns"
-import { fr } from "date-fns/locale"
 import { formatCurrency } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { ComparisonMode } from "./AccountingFilters"
@@ -83,7 +81,7 @@ interface CategoryData {
 
 // Définition personnalisée pour étendre ColumnMeta avec la propriété style
 declare module '@tanstack/react-table' {
-  interface ColumnMeta<TData, TValue> {
+  interface ColumnMeta {
     style?: React.CSSProperties;
     monthName?: string;
   }
@@ -653,7 +651,7 @@ const AccountingIncomeGridView = React.forwardRef<
       // Comparaison avec la moyenne de l'année
       const sumOtherMonths = Object.entries(data)
         .filter(([m]) => m !== month)
-        .reduce((sum, [_, value]) => sum + value, 0)
+        .reduce((sum, entry) => sum + entry[1], 0)
       
       const otherMonthsCount = Object.keys(data).length - 1
       
@@ -1134,13 +1132,13 @@ const AccountingIncomeGridView = React.forwardRef<
                 )}
                 
                 {/* Cellules de total pour les mois de l'année ouverte */}
-                {expandedYear && Array.from({length: 12}, (_, i) => String(i + 1).padStart(2, '0')).map(month => {
+                {expandedYear && Array.from({length: 12}, (_unused, i) => String(i + 1).padStart(2, '0')).map(month => {
                   const monthTotal = data.reduce((sum, category) => {
                     return sum + (category.yearlyData[expandedYear]?.monthlyData[month] || 0)
                   }, 0)
                   
                   const allMonthlyData = Object.fromEntries(
-                    Array.from({length: 12}, (_, i) => String(i + 1).padStart(2, '0')).map(m => [
+                    Array.from({length: 12}, (_unused, i) => String(i + 1).padStart(2, '0')).map(m => [
                       m,
                       data.reduce((sum, category) => {
                         return sum + (category.yearlyData[expandedYear]?.monthlyData[m] || 0)

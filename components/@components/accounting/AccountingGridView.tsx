@@ -81,7 +81,7 @@ interface SubcategoryData {
 
 // Définition personnalisée pour étendre ColumnMeta avec la propriété style
 declare module '@tanstack/react-table' {
-  interface ColumnMeta<TData, TValue> {
+  interface ColumnMeta {
     style?: React.CSSProperties;
     monthName?: string;
   }
