@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { LoginForm } from '@/components/ui/login-form'
@@ -10,7 +10,8 @@ interface Organization {
   name: string
 }
 
-export default function SignupPage() {
+// Composant qui utilise useSearchParams à l'intérieur de Suspense
+function SignupContent() {
   const searchParams = useSearchParams()
   const supabase = createClientComponentClient()
   
@@ -137,5 +138,27 @@ export default function SignupPage() {
         />
       </div>
     </div>
+  )
+}
+
+// Composant de fallback pour Suspense
+function LoadingSignup() {
+  return (
+    <div className="container flex items-center justify-center min-h-screen py-10">
+      <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
+        <div className="flex flex-col space-y-2 text-center">
+          <h1 className="text-2xl font-semibold tracking-tight">Chargement...</h1>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Composant principal qui englobe le contenu dans Suspense
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<LoadingSignup />}>
+      <SignupContent />
+    </Suspense>
   )
 } 
