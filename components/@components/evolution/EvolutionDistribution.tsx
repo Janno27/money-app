@@ -71,10 +71,10 @@ export function EvolutionDistribution({ showAllSubcategories }: EvolutionDistrib
       transactions?.forEach(transaction => {
         const amount = Math.abs(transaction.final_amount)
         const categoryId = transaction.category.id
-        // @ts-expect-error - Variable conservée pour usage futur potentiel
+        // @ts-expect-error - Variable conservée intentionnellement pour référence future
         const _categoryName = transaction.category.name
         const subcategoryId = transaction.subcategory?.id
-        // @ts-expect-error - Variable conservée pour usage futur potentiel
+        // @ts-expect-error - Variable conservée intentionnellement pour référence future
         const _subcategoryName = transaction.subcategory?.name
 
         if (transaction.is_income) {

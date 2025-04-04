@@ -1,6 +1,8 @@
-import { useEffect, useState, useCallback } from "react"
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import * as React from "react"
+import { useState, useEffect, useCallback } from "react"
+import { Card } from "@/components/ui/card"
 import { formatCurrency } from "@/lib/format"
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { ArrowDown, ArrowUp, Minus, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 

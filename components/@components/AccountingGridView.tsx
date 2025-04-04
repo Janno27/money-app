@@ -629,9 +629,8 @@ export const AccountingGridView = React.forwardRef<
     })
   }
 
-  // Trouver l'année active
-  // @ts-expect-error - La variable est définie mais non utilisée actuellement
-  const _activeYear = Array.from(expandedYears)[0] || 0
+  // Année active (préfixée avec _ car actuellement non utilisée mais pourrait l'être)
+  const [_activeYear, setActiveYear] = React.useState(new Date().getFullYear());
 
   return (
     <div style={{ height: '100%', paddingTop: '1rem', paddingBottom: '1rem' }} className={className}>

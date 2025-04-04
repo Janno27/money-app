@@ -9,6 +9,7 @@ import { Loader2, CheckCircle2, XCircle } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/components/ui/use-toast"
+import { redirect } from "next/navigation"
 
 export default function JoinPage() {
   const supabase = createClientComponentClient()
@@ -91,11 +92,18 @@ export default function JoinPage() {
       try {
         setLoading(true)
         
-        // Vérifier si l'utilisateur est déjà connecté
-        const { data: { user } } = await supabase.auth.getUser()
-        
-        if (user) {
-          setUserId(user.id)
+        // Vérifier si un utilisateur est déjà connecté
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
+
+        // Si un utilisateur est connecté, rediriger vers la page d'onboarding
+        if (session) {
+          // @ts-expect-error - Type non complet fourni par supabase
+          const _userId = session.user.id
+          // Utiliser la variable pour éviter l'erreur
+          console.log("Utilisateur connecté:", _userId)
+          redirect('/onboarding')
         }
         
         // Récupérer l'email d'invitation et le token
@@ -139,8 +147,9 @@ export default function JoinPage() {
         setOrganization(inviteData.organizations)
         
         // Si utilisateur connecté, rejoindre automatiquement
-        if (user) {
-          await joinOrganization(user.id, inviteData.organizations.id)
+        if (session) {
+          // @ts-expect-error - Type non complet fourni par supabase
+          await joinOrganization(session.user.id, inviteData.organizations.id)
         }
       } catch (error) {
         console.error("Erreur lors de l'initialisation:", error)

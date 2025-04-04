@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useRouter } from "next/navigation"
 import { toast } from "@/components/ui/use-toast"
-import Image from "next/image"
 import { useState, useEffect } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import { motion, AnimatePresence } from "framer-motion"

@@ -1,12 +1,14 @@
 "use client"
 
+import * as React from "react"
 import { useState, useEffect, useRef } from "react"
 import { useOnboarding } from "@/hooks/useOnboarding"
 import { Button } from "@/components/ui/button"
+import { motion } from "framer-motion"
+import { Step } from './common'
 import { Loader2, ArrowRight, ArrowLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { AnimatePresence, motion } from "framer-motion"
-import { Step } from './common';
+import { AnimatePresence } from "framer-motion"
 import { demoDataGenerator } from '@/services/demo-data/demo-data-generator';
 
 interface OnboardingTourProps {
