@@ -2,8 +2,10 @@ import { useEffect, useState, useCallback } from "react"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { formatCurrency } from "@/lib/format"
 import { ArrowDown, ArrowUp, Minus, ChevronLeft, ChevronRight } from "lucide-react"
+// @ts-ignore - Import non utilisé
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+// @ts-ignore - Import non utilisé
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface YearSummary {

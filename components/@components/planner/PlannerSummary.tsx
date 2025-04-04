@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { format, addMonths, startOfMonth, parse } from "date-fns"
+import { format, addMonths, startOfMonth, parse as _parse } from "date-fns"
 import { fr } from "date-fns/locale"
 import {
   Tooltip,

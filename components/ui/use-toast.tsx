@@ -23,23 +23,12 @@ type ActionTypes = {
   REMOVE_TOAST: "REMOVE_TOAST"
 }
 
-// @ts-ignore - Conservé pour référence future potentielle
-const ACTION_TYPES: ActionTypes = {
-  ADD_TOAST: "ADD_TOAST",
-  UPDATE_TOAST: "UPDATE_TOAST",
-  DISMISS_TOAST: "DISMISS_TOAST",
-  REMOVE_TOAST: "REMOVE_TOAST",
-}
-
 let count = 0
 
 function genId() {
   count = (count + 1) % Number.MAX_VALUE
   return count.toString()
 }
-
-// @ts-ignore - Type conservé pour référence future
-type ActionType = ActionTypes
 
 type Action =
   | {

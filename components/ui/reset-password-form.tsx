@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import { getSupabaseClient, updateUserPassword } from "@/lib/supabase/client"
+import { updateUserPassword } from "@/lib/supabase/client"
 
 interface ResetPasswordFormProps {
   onSuccess?: () => void

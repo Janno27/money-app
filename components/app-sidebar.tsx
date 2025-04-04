@@ -7,9 +7,6 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarRail,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
 } from "@/components/ui/sidebar"
 import { NavProjects } from "@/components/nav-projects"
 import { NavMain } from "@/components/nav-main"

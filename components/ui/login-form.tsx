@@ -31,11 +31,9 @@ interface LoginFormProps extends React.ComponentProps<"div"> {
 }
 
 export function LoginForm({
-  className,
   initialStep = 'login',
   prefilledEmail = null,
   organizationToJoin = null,
-  ...props
 }: LoginFormProps) {
   const router = useRouter()
   const supabase = getSupabaseClient()

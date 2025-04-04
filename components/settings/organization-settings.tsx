@@ -103,8 +103,8 @@ export function OrganizationSettings() {
             if (rolesError) throw rolesError
             
             // Combiner les données des membres avec leurs rôles
-            const membersWithRoles = membersData.map((member: Record<string, any>) => {
-              const memberRole = rolesData.find((r: Record<string, any>) => r.user_id === member.id)
+            const membersWithRoles = membersData.map((member: { id: string; [key: string]: unknown }) => {
+              const memberRole = rolesData.find((r: { user_id: string; role: string }) => r.user_id === member.id)
               return {
                 ...member,
                 role: memberRole?.role || 'member'

@@ -70,11 +70,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       // Traiter les données pour l'aperçu
       if (data && data.length > 0) {
-        data.forEach((transaction: any) => {
-          const categoryName = transaction.category_name || 'Non catégorisé';
-          const subcategoryName = transaction.subcategory_name || 'Non catégorisé';
-          const amount = Math.abs(transaction.amount);
-          const date = new Date(transaction.date);
+        data.forEach((transaction: Record<string, unknown>) => {
+          const categoryName = transaction.category_name as string || 'Non catégorisé';
+          const subcategoryName = transaction.subcategory_name as string || 'Non catégorisé';
+          const amount = Math.abs(transaction.amount as number);
+          const date = new Date(transaction.date as string);
           const month = String(date.getMonth() + 1).padStart(2, '0'); // Format "01", "02", etc.
           
           // Initialiser la catégorie si elle n'existe pas
@@ -104,8 +104,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     } catch (axiosError: unknown) {
       const error = axiosError as Error & { 
-        response?: { data: any, status: number, headers: any }, 
-        request?: any 
+        response?: { data: Record<string, unknown>, status: number, headers: Record<string, unknown> }, 
+        request?: Record<string, unknown> 
       };
       console.error('Erreur axios:', error.message);
       if (error.response) {

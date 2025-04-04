@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -62,7 +62,7 @@ export function CategorySettings() {
   
   const supabase = createClientComponentClient()
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     setLoading(true)
     try {
       // Récupérer les catégories
@@ -100,7 +100,7 @@ export function CategorySettings() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [categoryType, supabase])
 
   // Charger les catégories et sous-catégories
   useEffect(() => {

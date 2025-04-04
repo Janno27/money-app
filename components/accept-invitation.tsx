@@ -208,7 +208,7 @@ export function AcceptInvitation() {
               <CheckCircle2 className="h-5 w-5 text-green-500" />
               Invitation acceptée
             </CardTitle>
-            <CardDescription>Vous avez rejoint l'organisation avec succès</CardDescription>
+            <CardDescription>Vous avez rejoint l&apos;organisation avec succès</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">

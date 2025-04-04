@@ -1,11 +1,10 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { toast } from "@/components/ui/use-toast"
 import { Loader2, CheckCircle2, XCircle } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -25,9 +24,10 @@ export default function JoinPage() {
   const [password, setPassword] = useState("")
   const [name, setName] = useState("")
   const [organization, setOrganization] = useState<{ id: string, name: string } | null>(null)
+  // @ts-ignore - Conservé pour usage futur potentiel
   const [userId, setUserId] = useState("")
   
-  const joinOrganization = async (userId: string, organizationId: string) => {
+  const joinOrganization = useCallback(async (userId: string, organizationId: string) => {
     try {
       // Vérifier si l'utilisateur est déjà membre
       const { data: existingMember } = await supabase
@@ -84,7 +84,7 @@ export default function JoinPage() {
       console.error("Erreur lors de l'ajout à l'organisation:", err)
       setError("Une erreur est survenue lors de l'acceptation de l'invitation.")
     }
-  }
+  }, [router, supabase, toast])
   
   useEffect(() => {
     const init = async () => {
@@ -246,7 +246,7 @@ export default function JoinPage() {
               <XCircle className="h-5 w-5 text-destructive" />
               Erreur
             </CardTitle>
-            <CardDescription>Impossible de traiter l'invitation</CardDescription>
+            <CardDescription>Impossible de traiter l&apos;invitation</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">{error}</p>

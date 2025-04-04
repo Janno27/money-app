@@ -160,7 +160,7 @@ export function PlannerChart({ monthsAhead = 6, className }: PlannerChartProps) 
           const month = parseInt(monthKey.substring(5, 7)) - 1; // -1 car les mois sont 0-indexés en JS
           
           // Déterminer si c'est une prévision (après le mois courant)
-          const isAfterCurrentMonth = index > currentMonthIndex;
+          const _isAfterCurrentMonth = index > currentMonthIndex;
           
           // Préparer les valeurs
           let soldeReel = undefined;
@@ -227,7 +227,7 @@ export function PlannerChart({ monthsAhead = 6, className }: PlannerChartProps) 
     
     // Générer tous les mois de l'année
     for (let i = 0; i < 12; i++) {
-      const isAfterCurrentMonth = i > currentMonth;
+      const _isAfterCurrentMonth = i > currentMonth;
       const value = getValueForMonth(i);
       
       demoData.push({

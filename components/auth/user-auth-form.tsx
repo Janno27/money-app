@@ -10,11 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-// Supprimer l'interface vide et utiliser directement les props dans la fonction
-interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {
-  /* Cette interface est nécessaire pour étendre les propriétés HTML tout en gardant la possibilité
-     d'ajouter des propriétés spécifiques dans le futur. */
-}
+type UserAuthFormProps = React.HTMLAttributes<HTMLDivElement>
 
 export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
   const [isLoading, setIsLoading] = React.useState<boolean>(false)

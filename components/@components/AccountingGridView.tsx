@@ -73,6 +73,7 @@ const calculateComparison = (
   currentValue: number,
   previousValue: number | number[],
   mode: ComparisonMode,
+  // @ts-ignore - Le paramètre est nécessaire mais non utilisé pour ce mode de comparaison
   selectedMonths: string[]
 ) => {
   if (mode === 'month-to-month') {
@@ -107,6 +108,7 @@ export const AccountingGridView = React.forwardRef<
 }, ref) => {
   const [data, setData] = React.useState<CategoryData[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
+  const [isFetching, setIsFetching] = React.useState(false)
   const [expandedCategories, setExpandedCategories] = React.useState<Set<string>>(new Set())
   const [expandedYears, setExpandedYears] = React.useState<Set<number>>(new Set([new Date().getFullYear()]))
   const [availableYears, setAvailableYears] = React.useState<number[]>([])
@@ -119,12 +121,13 @@ export const AccountingGridView = React.forwardRef<
   const cardRef = React.useRef<HTMLDivElement>(null)
   const supabase = createClientComponentClient()
 
-  const months = [
+  // Utiliser useMemo pour éviter la recréation à chaque rendu
+  const months = React.useMemo(() => [
     "janvier", "février", "mars", "avril", "mai", "juin",
     "juillet", "août", "septembre", "octobre", "novembre", "décembre"
-  ]
+  ], [])
 
-  const toggleCategory = (categoryId: string) => {
+  const toggleCategory = React.useCallback((categoryId: string) => {
     const newExpanded = new Set(expandedCategories)
     if (newExpanded.has(categoryId)) {
       newExpanded.delete(categoryId)
@@ -132,9 +135,9 @@ export const AccountingGridView = React.forwardRef<
       newExpanded.add(categoryId)
     }
     setExpandedCategories(newExpanded)
-  }
+  }, [expandedCategories])
 
-  const toggleYear = (year: number) => {
+  const toggleYear = React.useCallback((year: number) => {
     const newExpanded = new Set(expandedYears)
     if (newExpanded.has(year)) {
       newExpanded.delete(year)
@@ -144,7 +147,7 @@ export const AccountingGridView = React.forwardRef<
       newExpanded.add(year)
     }
     setExpandedYears(newExpanded)
-  }
+  }, [expandedYears])
 
   const toggleAllCategories = React.useCallback(() => {
     if (expandedCategories.size === data.length) {
@@ -154,8 +157,11 @@ export const AccountingGridView = React.forwardRef<
     }
   }, [data, expandedCategories])
 
-  const fetchData = async () => {
-    setIsLoading(true)
+  const fetchData = React.useCallback(async () => {
+    if (isFetching) return;
+    
+    setIsLoading(true);
+    setIsFetching(true);
     try {
       let query = supabase
         .from('transactions_with_refunds')
@@ -303,16 +309,17 @@ export const AccountingGridView = React.forwardRef<
       
       setData(filteredData)
       setTotals(globalTotals)
-      setIsLoading(false)
     } catch (error) {
       console.error('Error fetching data:', error)
+    } finally {
       setIsLoading(false)
+      setIsFetching(false)
     }
-  }
+  }, [supabase, isIncome, dateRange, searchQuery, selectedMonths, comparisonMode])
 
   React.useEffect(() => {
     fetchData()
-  }, [dateRange, searchQuery, isIncome, fetchData])
+  }, [fetchData])
 
   // Pour résoudre le problème du useEffect nettoyage ref
   React.useEffect(() => {
@@ -627,19 +634,20 @@ export const AccountingGridView = React.forwardRef<
   }
 
   // Trouver l'année active
+  // @ts-ignore - La variable est définie mais non utilisée actuellement
   const activeYear = Array.from(expandedYears)[0] || 0
 
   return (
     <div style={{ height: '100%', paddingTop: '1rem', paddingBottom: '1rem' }} className={className}>
       <div 
         ref={cardRef}
-        className="relative bg-white rounded-xl"
+        className="relative bg-background rounded-xl"
         style={{ 
           height: '100%',
           borderRadius: '12px',
           border: '1px solid transparent',
           backgroundClip: 'padding-box',
-          background: 'linear-gradient(#fff, #fff) padding-box, linear-gradient(to var(--gradient-direction, right), #e2e8f0, #2563eb var(--gradient-position, 50%), #e2e8f0) border-box',
+          background: 'linear-gradient(var(--background), var(--background)) padding-box, linear-gradient(to var(--gradient-direction, right), #e2e8f0, #2563eb var(--gradient-position, 50%), #e2e8f0) border-box',
           overflow: 'hidden',
           boxShadow: '0 0 15px rgba(37, 99, 235, 0.1)',
           transition: 'box-shadow 0.3s ease'
@@ -731,7 +739,7 @@ export const AccountingGridView = React.forwardRef<
                                     position: 'sticky', 
                                     left: 0, 
                                     zIndex: 5,
-                                    backgroundColor: 'rgba(241, 245, 249, 0.8)',
+                                    backgroundColor: 'var(--background)',
                                     boxShadow: '4px 0 8px -4px rgba(0,0,0,0.1)' 
                                   }}
                                 >
@@ -786,7 +794,7 @@ export const AccountingGridView = React.forwardRef<
                     position: 'sticky', 
                     left: 0, 
                     zIndex: 5,
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    backgroundColor: 'var(--background)',
                     backdropFilter: 'blur(4px)',
                     boxShadow: '4px 0 8px -4px rgba(0,0,0,0.1)' 
                   }}

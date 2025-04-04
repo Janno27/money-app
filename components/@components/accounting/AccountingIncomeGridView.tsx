@@ -23,6 +23,8 @@ import {
   getSortedRowModel,
   ColumnFiltersState,
   getFilteredRowModel,
+  // @ts-ignore - Imports non utilisés
+  TData,
 } from "@tanstack/react-table"
 import { ChevronDown, ChevronRight, ArrowUpDown } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -87,6 +89,9 @@ declare module '@tanstack/react-table' {
   }
 }
 
+// Mise à jour du type pour éviter les erreurs
+type LocalComparisonMode = 'month-to-month' | 'year-average' | 'selected-months' | 'month-to-average'
+
 const AccountingIncomeGridView = React.forwardRef<
   { fetchData: () => void; toggleAllCategories: () => void },
   AccountingIncomeGridViewProps
@@ -119,25 +124,25 @@ const AccountingIncomeGridView = React.forwardRef<
     ]
   }, [])
 
-  const toggleCategory = (categoryId: string) => {
-    const newExpandedCategories = new Set(expandedCategories)
-    if (newExpandedCategories.has(categoryId)) {
-      newExpandedCategories.delete(categoryId)
-    } else {
-      newExpandedCategories.add(categoryId)
-    }
-    setExpandedCategories(newExpandedCategories)
-  }
+  const toggleCategory = React.useCallback((categoryId: string) => {
+    setExpandedCategories(prev => {
+      if (prev.has(categoryId)) {
+        const newSet = new Set(prev);
+        newSet.delete(categoryId);
+        return newSet;
+      } else {
+        return new Set(prev).add(categoryId);
+      }
+    })
+  }, [])
   
-  const toggleYear = (year: string) => {
-    if (expandedYear === year) {
-      // Si l'année est déjà ouverte, on la ferme
-      setExpandedYear('')
-    } else {
-      // Sinon, on ouvre cette année et on ferme les autres
-      setExpandedYear(year)
-    }
-  }
+  const toggleYear = React.useCallback((year: string) => {
+    setExpandedYear(prev => {
+      return prev === year
+        ? ''
+        : year
+    })
+  }, [])
 
   const toggleAllCategories = React.useCallback(() => {
     if (expandedCategories.size === data.length) {
@@ -354,7 +359,7 @@ const AccountingIncomeGridView = React.forwardRef<
 
   React.useEffect(() => {
     fetchData()
-  }, [dateRange, searchQuery, isIncome])
+  }, [dateRange, searchQuery, isIncome, fetchData])
 
   // Expose methods via ref
   React.useImperativeHandle(ref, () => ({
@@ -596,7 +601,7 @@ const AccountingIncomeGridView = React.forwardRef<
   }
 
   // Fonction pour générer la cellule avec comparaison
-  const renderMonthCellWithComparison = (
+  const renderMonthCellWithComparison = React.useCallback((
     amount: number, 
     comparisonAmount: number | null,
     comparisonType: 'previous' | 'average',
@@ -626,13 +631,13 @@ const AccountingIncomeGridView = React.forwardRef<
         </div>
       </div>
     )
-  }
+  }, [])
   
   // Fonction pour obtenir la valeur de référence pour la comparaison
-  const getComparisonValue = (
+  const getComparisonValue = React.useCallback((
     data: {[month: string]: number}, 
     month: string, 
-    mode: ComparisonMode, 
+    mode: LocalComparisonMode, 
     selectedMonths: string[]
   ): number | null => {
     if (mode === 'month-to-month') {
@@ -643,40 +648,31 @@ const AccountingIncomeGridView = React.forwardRef<
       // Si c'est janvier, il n'y a pas de mois précédent dans l'année
       if (monthNum === 1) return null
       
-      return data[prevMonth] || 0
-    } else {
+      return data[prevMonth] ?? null
+    } else if (mode === 'year-average' || mode === 'month-to-average') {
+      // Comparaison avec la moyenne de l'année
+      const sumOtherMonths = Object.entries(data)
+        .filter(([m]) => m !== month)
+        .reduce((sum, [_, value]) => sum + value, 0)
+      
+      const otherMonthsCount = Object.keys(data).length - 1
+      
+      return otherMonthsCount > 0 ? sumOtherMonths / otherMonthsCount : null
+    } else if (mode === 'selected-months') {
       // Comparaison avec la moyenne des mois sélectionnés
-      if (!selectedMonths || selectedMonths.length === 0) return null
+      if (selectedMonths.length === 0) return null
       
-      // Convertir les mois format "Janvier", "Février" en "01", "02", etc.
-      const monthMapping: {[key: string]: string} = {
-        'Janvier': '01', 'Février': '02', 'Mars': '03', 'Avril': '04',
-        'Mai': '05', 'Juin': '06', 'Juillet': '07', 'Août': '08',
-        'Septembre': '09', 'Octobre': '10', 'Novembre': '11', 'Décembre': '12'
-      }
+      const sumSelectedMonths = selectedMonths
+        .filter(m => m !== month && data[m] !== undefined)
+        .reduce((sum, m) => sum + (data[m] || 0), 0)
       
-      // Convertir les mois sélectionnés en numéros (en minuscules et en majuscules)
-      const selectedMonthNumbers = selectedMonths.map(m => {
-        // Convertir la première lettre en majuscule pour correspondre au mapping
-        const mFormatted = m.charAt(0).toUpperCase() + m.slice(1).toLowerCase()
-        return monthMapping[mFormatted] || m
-      })
+      const selectedMonthsCount = selectedMonths.filter(m => m !== month && data[m] !== undefined).length
       
-      // Exclure le mois actuel de la comparaison
-      const monthsForAverage = selectedMonthNumbers.filter(m => m !== month)
-      
-      if (monthsForAverage.length === 0) return null
-      
-      // Filtrer les valeurs valides avant de calculer la moyenne
-      const selectedValues = monthsForAverage
-        .map(m => data[m])
-        .filter(v => v !== undefined && v !== null)
-      
-      if (selectedValues.length === 0) return null
-      
-      return selectedValues.reduce((sum, val) => sum + val, 0) / selectedValues.length
+      return selectedMonthsCount > 0 ? sumSelectedMonths / selectedMonthsCount : null
     }
-  }
+    
+    return null
+  }, [])
 
   const columns = React.useMemo(() => {
     // Création des colonnes de base

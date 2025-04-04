@@ -3,7 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import React, { useState, useEffect, ReactNode, useRef } from "react"
-import { Plus, CheckCircle, ArrowRight, Paperclip, Keyboard, Sparkles, Tags, Atom, Sparkle, FileSpreadsheet, X } from "lucide-react"
+import { Plus, CheckCircle, ArrowRight, Paperclip, Keyboard, Sparkles, Atom, Sparkle, FileSpreadsheet, X } from "lucide-react"
 import { OnboardingTour } from "./OnboardingTour"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -268,7 +268,7 @@ interface SecondGroupProps {
   onComplete?: () => void;
 }
 
-function SecondGroup({ show, theme, onComplete }: SecondGroupProps) {
+function _SecondGroup({ show, theme, onComplete }: SecondGroupProps) {
   useEffect(() => {
     if (show) {
       // Démarrer les animations du second groupe
@@ -324,7 +324,7 @@ interface ThirdGroupProps {
   onComplete?: () => void;
 }
 
-function ThirdGroup({ show, theme, onComplete }: ThirdGroupProps) {  
+function _ThirdGroup({ show, theme, onComplete }: ThirdGroupProps) {  
   useEffect(() => {
     if (show) {
       // Démarrer les animations du troisième groupe
@@ -380,7 +380,7 @@ interface FinalRevealProps {
   onComplete: () => void;
 }
 
-function FinalReveal({ show, theme, onComplete }: FinalRevealProps) {
+function _FinalReveal({ show, theme, onComplete }: FinalRevealProps) {
   const [textOpacity, setTextOpacity] = useState(0);
   const [scale, setScale] = useState(0.8);
   const [fireworks, setFireworks] = useState<{ id: number; x: number; y: number; size: number; color: string }[]>([]);
@@ -616,7 +616,7 @@ interface ImportedData {
 }
 
 // Remplacer le contenu de la modale de validation finale par un résumé et feux d'artifice
-function SuccessImportContent({ year, totalCategories, totalSubcategories }: { 
+function _SuccessImportContent({ year, totalCategories, totalSubcategories }: { 
   year: string; 
   totalCategories: number; 
   totalSubcategories: number; 
@@ -689,28 +689,11 @@ export function OnboardingGeneral({ children }: OnboardingGeneralProps) {
   const [organization, setOrganization] = useState<{ id: string; name: string }>({ id: '', name: 'Votre foyer' });
   const [members, setMembers] = useState<Member[]>([]);
   const [newMemberEmail, setNewMemberEmail] = useState('');
-  // @ts-ignore - Variables préservées pour une utilisation future
-  const [isLoading, setIsLoading] = useState(false);
-  // @ts-ignore - Variables préservées pour une utilisation future
-  const [displayInviteForm, setDisplayInviteForm] = useState(false);
   const [showInviteForm, setShowInviteForm] = useState(false);
   const [isInviting, setIsInviting] = useState(false);
   const [copySuccess, setCopySuccess] = useState<string | null>(null);
-  // @ts-ignore - Variables préservées pour une utilisation future
-  const [fileSuccess, setFileSuccess] = useState(false);
-  // @ts-ignore - Variables préservées pour une utilisation future
-  const [fileError, setFileError] = useState<string | null>(null);
   const [invitedMemberIndex, setInvitedMemberIndex] = useState<number | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [onboardingStarted, setOnboardingStarted] = useState(false);
-  // @ts-ignore - Variables préservées pour une utilisation future
-  const [firstGroupComplete, setFirstGroupComplete] = useState(false);
-  // @ts-ignore - Variables préservées pour une utilisation future
-  const [secondGroupComplete, setSecondGroupComplete] = useState(false);
-  // @ts-ignore - Variables préservées pour une utilisation future
-  const [thirdGroupComplete, setThirdGroupComplete] = useState(false);
-  // @ts-ignore - Variables préservées pour une utilisation future
-  const [showFirstGroup, setShowFirstGroup] = useState(true);
   const [initOption, setInitOption] = useState<'fromScratch' | 'demo' | 'import'>('fromScratch');
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
@@ -2190,7 +2173,7 @@ export function OnboardingGeneral({ children }: OnboardingGeneralProps) {
                 ))
               ) : (
                 <div className="px-4 py-3 text-sm text-slate-500 dark:text-slate-300 text-center">
-                  Aucun membre pour l'instant
+                  Aucun membre pour l&apos;instant
                 </div>
               )}
             </div>
@@ -2725,7 +2708,7 @@ export function OnboardingGeneral({ children }: OnboardingGeneralProps) {
                       
                       <div className="bg-white dark:bg-slate-800 rounded-md p-4 border border-slate-200 dark:border-slate-700 mb-4 relative z-10">
                         <h4 className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-3">
-                          Résumé de l'importation
+                          Résumé de l&apos;importation
                         </h4>
                         <div className="space-y-2">
                           <div className="flex justify-between text-sm">

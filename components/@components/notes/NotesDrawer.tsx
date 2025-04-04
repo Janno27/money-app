@@ -191,7 +191,7 @@ export function NotesDrawer() {
 
   const handleUpdateNote = async (id: string, updates: Partial<Note>) => {
     // Destructurer en ignorant le champ user qui n'est pas nécessaire pour l'update
-    const { user: _, ...updateData } = updates
+    const { user: _user, ...updateData } = updates
 
     const { data: note, error } = await supabase
       .from('notes')

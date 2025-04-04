@@ -75,14 +75,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(200).json(response.data);
     } catch (axiosError: unknown) {
       const error = axiosError as Error & { 
-        response?: { data: any, status: number, statusText: string }, 
-        request?: any 
+        response?: { data: Record<string, unknown>, status: number, statusText: string }, 
+        request?: Record<string, unknown> 
       };
       console.error('Erreur axios:', error.message);
       if (error.response) {
         console.error('Détails de la réponse:', error.response.data);
         return res.status(error.response.status).json({ 
-          error: `Erreur du serveur backend: ${error.response.data.detail || error.response.statusText}` 
+          error: `Erreur du serveur backend: ${(error.response.data as { detail?: string })?.detail || error.response.statusText}` 
         });
       } else if (error.request) {
         console.error('Pas de réponse reçue:', error.request);

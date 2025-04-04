@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button"
 
 export function ThemeSwitcher() {
   const { resolvedTheme, setTheme } = useTheme()
-  const { state } = useSidebar()
+  const { } = useSidebar()
   const [mounted, setMounted] = React.useState(false)
 
   // Effet pour éviter l'hydration côté client/serveur

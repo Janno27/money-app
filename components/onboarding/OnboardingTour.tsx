@@ -24,30 +24,23 @@ export function OnboardingTour({ type = 'new-user', steps, onComplete }: Onboard
   const {
     isOnboardingActive,
     currentStep,
-    // @ts-ignore - Variable préservée pour utilisation future
-    totalSteps,
+    totalSteps: _totalSteps,
     nextStep,
     prevStep,
-    // @ts-ignore - Variable préservée pour utilisation future
-    skipOnboarding,
+    skipOnboarding: _skipOnboarding,
     completeOnboarding
   } = useOnboarding(type, steps.length)
   
   const containerRef = useRef<HTMLDivElement>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [isClosing, setIsClosing] = useState(false);
-  // @ts-ignore - Variables préservées pour utilisation future
-  const [step, setStep] = useState(Step.OnboardingGeneral);
+  const [_step, _setStep] = useState(Step.OnboardingGeneral);
   const [initOption, setInitOption] = useState<'fromScratch' | 'demo' | 'import'>('fromScratch');
-  // @ts-ignore - Variables préservées pour utilisation future
-  const [loading, setLoading] = useState(false);
+  const [_loading, _setLoading] = useState(false);
   const [processingDemo, setProcessingDemo] = useState(false);
-  // @ts-ignore - Variables préservées pour utilisation future
-  const [importFile, setImportFile] = useState<File | null>(null);
-  // @ts-ignore - Variable préservée pour utilisation future
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  // @ts-ignore - Variables préservées pour utilisation future
-  const [showSidebar, setShowSidebar] = useState(true);
+  const [_importFile, _setImportFile] = useState<File | null>(null);
+  const _fileInputRef = useRef<HTMLInputElement>(null);
+  const [_showSidebar, _setShowSidebar] = useState(true);
 
   // Pour la communication avec les composants enfants
   useEffect(() => {
@@ -228,9 +221,9 @@ export function OnboardingTour({ type = 'new-user', steps, onComplete }: Onboard
   }
 
   const currentStepData = steps[currentStep];
-  const isLastStep = currentStep === steps.length - 1;
+  const _isLastStep = currentStep === steps.length - 1;
   const isFirstStep = currentStep === 0;
-  const isThemeStep = currentStep === 1;
+  const _isThemeStep = currentStep === 1;
   const showBackButton = currentStepData.showBackButton && currentStep > 0;
 
   // Variantes d'animation pour les transitions entre étapes

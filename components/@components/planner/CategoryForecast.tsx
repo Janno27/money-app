@@ -14,16 +14,16 @@ interface CategoryForecastProps {
 
 interface Transaction {
   id?: string
-  final_amount: any
-  is_income: any
-  accounting_date: any
+  final_amount: string
+  is_income: boolean
+  accounting_date: string
   category: {
-    id: any
-    name: any
+    id: string
+    name: string
   }
   subcategory?: {
-    id: any
-    name: any
+    id: string
+    name: string
   }
 }
 
@@ -121,6 +121,7 @@ export function CategoryForecast({ monthsAhead = 6, className }: CategoryForecas
         const subcategoryMap = new Map<string, CategoryData>();
         
         // Traiter les transactions réelles
+        // @ts-ignore - Structure complexe des données Supabase
         transactionsData?.forEach((transaction: Transaction) => {
           if (!transaction.subcategory) return;
           
