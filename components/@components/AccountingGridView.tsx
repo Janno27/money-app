@@ -124,7 +124,7 @@ export const AccountingGridView = React.forwardRef<
     years: { [key: number]: number },
     months: { [key: string]: number }
   }>({ years: {}, months: {} })
-  const [_activeYear, _setActiveYear] = React.useState<string>(new Date().getFullYear().toString());
+  const [_activeYear, setActiveYear] = React.useState(new Date().getFullYear())
   const cardRef = React.useRef<HTMLDivElement>(null)
   const supabase = createClientComponentClient()
 

@@ -48,10 +48,10 @@ export async function POST(request: Request) {
     console.log("Organisation trouvée:", organizationData)
 
     // Vérifier que l'utilisateur existe dans auth.users
-    const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(user_id)
+    const { data: userData, error: _userError } = await supabaseAdmin.auth.admin.getUserById(user_id)
 
-    if (userError || !userData.user) {
-      console.error('Erreur lors de la récupération de l\'utilisateur:', userError)
+    if (_userError || !userData.user) {
+      console.error('Erreur lors de la récupération de l\'utilisateur:', _userError)
       return NextResponse.json(
         { error: 'Utilisateur non trouvé' },
         { status: 404 }
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
     
     while (attempts < maxAttempts) {
       attempts++
-      const { data: publicUser, error: _publicUserError } = await supabaseAdmin
+      const { data: publicUser, error: _userError } = await supabaseAdmin
         .from('users')
         .select('*')
         .eq('id', user_id)
