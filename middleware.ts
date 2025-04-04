@@ -42,8 +42,7 @@ export async function middleware(req: NextRequest) {
     // Si l'utilisateur n'est pas connecté et tente d'accéder à une route protégée
     const isAuthRoute = req.nextUrl.pathname.startsWith('/login') || 
                         req.nextUrl.pathname.startsWith('/signup') ||
-                        req.nextUrl.pathname.startsWith('/accept-invitation') ||
-                        req.nextUrl.pathname.startsWith('/join')
+                        req.nextUrl.pathname.startsWith('/accept-invitation')
     
     const isOnboardingRoute = req.nextUrl.pathname.startsWith('/onboarding')
     
