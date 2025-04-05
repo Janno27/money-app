@@ -2,11 +2,18 @@
 
 import * as React from "react"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { format } from "date-fns"
-import { fr } from "date-fns/locale"
 import { formatCurrency } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { ComparisonMode } from "./AccountingFilters"
+import { addDays } from "date-fns"
+import { Calendar as CalendarIcon } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Calendar } from "@/components/ui/calendar"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import {
   Table,
   TableBody,
@@ -23,37 +30,20 @@ import {
   useReactTable,
   SortingState,
   getSortedRowModel,
-  ColumnFiltersState,
-  getFilteredRowModel,
 } from "@tanstack/react-table"
 import { ChevronDown, ChevronRight, ArrowUpDown } from "lucide-react"
-import { Skeleton } from "@/components/ui/skeleton"
 
-interface AccountingIncomeGridViewProps {
+interface SimpleAccountingViewProps {
   searchQuery: string
   dateRange: {
     from: Date | null
     to: Date | null
   }
-  isIncome?: boolean
-  comparisonMode: ComparisonMode
+  isIncome: boolean
+  comparisonMode: 'month-to-month' | 'month-to-average'
   selectedMonths: string[]
   className?: string
   isMaximized?: boolean
-}
-
-// Définir le type pour les sous-catégories
-interface SubcategoryData {
-  id: string;
-  name: string;
-  yearlyData: {
-    [year: string]: {
-      total: number;
-      monthlyData: {
-        [month: string]: number;
-      };
-    };
-  };
 }
 
 interface CategoryData {
@@ -81,6 +71,20 @@ interface CategoryData {
   }[]
 }
 
+// Définir le type pour les sous-catégories
+interface SubcategoryData {
+  id: string;
+  name: string;
+  yearlyData: {
+    [year: string]: {
+      total: number;
+      monthlyData: {
+        [month: string]: number;
+      };
+    };
+  };
+}
+
 // Définition personnalisée pour étendre ColumnMeta avec la propriété style
 declare module '@tanstack/react-table' {
   interface ColumnMeta<TData, TValue> {
@@ -89,12 +93,18 @@ declare module '@tanstack/react-table' {
   }
 }
 
-// Mise à jour du type pour éviter les erreurs
-type LocalComparisonMode = 'month-to-month' | 'year-average' | 'selected-months' | 'month-to-average'
+// Fonction utilitaire pour formater une date en français
+function formatDate(date: Date): string {
+  return date.toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  })
+}
 
-const AccountingIncomeGridView = React.forwardRef<
+const SimpleAccountingView = React.forwardRef<
   { fetchData: () => void; toggleAllCategories: () => void },
-  AccountingIncomeGridViewProps
+  SimpleAccountingViewProps
 >(({ 
   searchQuery, 
   dateRange, 
@@ -110,11 +120,9 @@ const AccountingIncomeGridView = React.forwardRef<
   const [isLoading, setIsLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
   const [sorting, setSorting] = React.useState<SortingState>([])
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [expandedCategories, setExpandedCategories] = React.useState<Set<string>>(new Set())
   const [expandedYear, setExpandedYear] = React.useState<string>(new Date().getFullYear().toString())
   const tableContainerRef = React.useRef<HTMLDivElement>(null)
-  const tableRef = React.useRef<HTMLDivElement>(null)
   
   // Années à afficher (année courante et les deux précédentes)
   const years = React.useMemo(() => {
@@ -128,23 +136,25 @@ const AccountingIncomeGridView = React.forwardRef<
 
   const toggleCategory = React.useCallback((categoryId: string) => {
     setExpandedCategories(prev => {
-      if (prev.has(categoryId)) {
-        const newSet = new Set(prev);
-        newSet.delete(categoryId);
-        return newSet;
+      const newSet = new Set(prev)
+      if (newSet.has(categoryId)) {
+        newSet.delete(categoryId)
       } else {
-        return new Set(prev).add(categoryId);
+        newSet.add(categoryId)
       }
+      return newSet
     })
   }, [])
-  
+
   const toggleYear = React.useCallback((year: string) => {
-    setExpandedYear(prev => {
-      return prev === year
-        ? ''
-        : year
-    })
-  }, [])
+    if (expandedYear === year) {
+      // Si l'année est déjà ouverte, on la ferme
+      setExpandedYear('')
+    } else {
+      // Sinon, on ouvre cette année et on ferme les autres
+      setExpandedYear(year)
+    }
+  }, [expandedYear])
 
   const toggleAllCategories = React.useCallback(() => {
     if (expandedCategories.size === data.length) {
@@ -154,8 +164,104 @@ const AccountingIncomeGridView = React.forwardRef<
     }
   }, [data, expandedCategories])
 
+  // Fonction pour générer la cellule avec comparaison
+  const renderMonthCellWithComparison = React.useCallback((
+    amount: number, 
+    comparisonAmount: number | null,
+    comparisonType: 'previous' | 'average',
+    isSubcategory: boolean = false
+  ) => {
+    // Fonction pour calculer la différence en pourcentage
+    const calculatePercentDifference = (current: number, reference: number): number => {
+      if (reference === 0) return current > 0 ? 100 : 0
+      return ((current - reference) / Math.abs(reference)) * 100
+    }
+
+    // Fonction pour formater l'affichage du pourcentage
+    const formatPercentage = (value: number): string => {
+      const sign = value > 0 ? '+' : ''
+      return `${sign}${value.toFixed(1)}%`
+    }
+
+    // Fonction pour déterminer la classe de couleur en fonction de la différence
+    const getDifferenceColorClass = (difference: number): string => {
+      if (Math.abs(difference) < 0.5) return 'text-slate-500 dark:text-slate-400' // Pas de changement significatif
+      return difference > 0 
+        ? 'text-green-600 dark:text-green-400' // Augmentation
+        : 'text-red-600 dark:text-red-400'     // Diminution
+    }
+    
+    const fontSizeClass = isSubcategory ? 'text-xs' : 'text-sm'
+    const fontWeightClass = isSubcategory ? 'font-normal' : 'font-medium'
+    
+    if (comparisonAmount === null) {
+      return (
+        <div className={`text-right ${fontSizeClass} ${fontWeightClass}`}>
+          {formatCurrency(amount)}
+        </div>
+      )
+    }
+
+    const difference = amount - comparisonAmount
+    const percentDifference = calculatePercentDifference(amount, comparisonAmount)
+    const percentClass = getDifferenceColorClass(percentDifference)
+    
+    return (
+      <div className={`text-right ${fontSizeClass} ${fontWeightClass} flex items-center justify-end gap-2`}>
+        <div>{formatCurrency(amount)}</div>
+        <div className={`flex flex-col items-end text-2xs ${percentClass}`}>
+          <span>{formatPercentage(percentDifference)}</span>
+          <span className="text-slate-500 dark:text-slate-400">({formatCurrency(Math.abs(difference))})</span>
+        </div>
+      </div>
+    )
+  }, [])
+  
+  // Fonction pour obtenir la valeur de référence pour la comparaison
+  const getComparisonValue = React.useCallback((
+    data: {[month: string]: number}, 
+    month: string, 
+    mode: 'month-to-month' | 'month-to-average',
+    selectedMonths: string[] = []
+  ): number | null => {
+    if (mode === 'month-to-month') {
+      // Comparaison avec le mois précédent
+      const monthNum = parseInt(month)
+      const prevMonth = String(monthNum - 1).padStart(2, '0')
+      
+      // Si c'est janvier, il n'y a pas de mois précédent dans l'année
+      if (monthNum === 1) return null
+      
+      return data[prevMonth] || 0
+    } else if (mode === 'month-to-average') {
+      // Calcul de la moyenne sur les mois sélectionnés
+      // Si aucun mois n'est sélectionné, utiliser tous les mois avec données
+      const monthsToUse = selectedMonths.length > 0 
+        ? selectedMonths.map(m => {
+            // Convertir nom du mois en numéro (01, 02, etc.)
+            const moisFrancais = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 
+                                 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre']
+            const monthIndex = moisFrancais.findIndex(nom => nom === m.toLowerCase())
+            return monthIndex !== -1 ? String(monthIndex + 1).padStart(2, '0') : null
+          }).filter(Boolean) as string[]
+        : Object.keys(data).filter(m => data[m] > 0)
+      
+      if (monthsToUse.length === 0) return null
+      
+      // Calculer la moyenne uniquement sur les mois qui ont des données
+      const validMonths = monthsToUse.filter(m => data[m] !== undefined && data[m] > 0)
+      if (validMonths.length === 0) return null
+      
+      const sum = validMonths.reduce((acc, m) => acc + (data[m] || 0), 0)
+      return sum / validMonths.length
+    }
+    
+    return null
+  }, [])
+
   const fetchData = async () => {
     setIsLoading(true)
+    setError(null)
     try {
       const currentYear = new Date().getFullYear()
       const months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
@@ -173,7 +279,7 @@ const AccountingIncomeGridView = React.forwardRef<
           category:categories(id, name),
           subcategory:subcategories(id, name)
         `)
-        .eq('is_income', true)
+        .eq('is_income', isIncome)
         .gte('accounting_date', `${yearsToFetch[2]}-01-01`)
         .lte('accounting_date', `${yearsToFetch[0]}-12-31`)
 
@@ -210,12 +316,12 @@ const AccountingIncomeGridView = React.forwardRef<
 
       if (transactions) {
         transactions.forEach(transaction => {
-          const categoryId = transaction.category?.id
+          const categoryId = transaction.category?.id || 'uncategorized'
           const categoryName = transaction.category?.name || 'Non catégorisé'
           const subcategoryId = transaction.subcategory?.id || 'uncategorized'
           const subcategoryName = transaction.subcategory?.name || 'Non catégorisé'
           const amount = Math.abs(transaction.final_amount)
-        const date = new Date(transaction.accounting_date)
+          const date = new Date(transaction.accounting_date)
           const year = date.getFullYear().toString()
           const month = String(date.getMonth() + 1).padStart(2, '0')
           
@@ -362,152 +468,13 @@ const AccountingIncomeGridView = React.forwardRef<
 
   React.useEffect(() => {
     fetchData()
-  }, [dateRange, searchQuery, isIncome, fetchData])
+  }, [dateRange, searchQuery, isIncome])
 
   // Expose methods via ref
   React.useImperativeHandle(ref, () => ({
     fetchData,
     toggleAllCategories
   }))
-
-  // Style CSS pour l'effet d'agrandissement
-  React.useEffect(() => {
-    // Ajouter les styles de transition globaux et pour les éléments fixes
-    const style = document.createElement('style')
-    style.innerHTML = `
-      .year-column-transition {
-        transition: background-color 0.3s ease;
-      }
-      .year-column-active {
-        animation: pulse 0.5s ease;
-      }
-      @keyframes pulse {
-        0% { background-color: rgba(59, 130, 246, 0.2); }
-        50% { background-color: rgba(59, 130, 246, 0.4); }
-        100% { background-color: rgba(59, 130, 246, 0.2); }
-      }
-      .accounting-table-wrapper {
-        transition: all 0.3s ease-in-out;
-      }
-      .sticky-header {
-        position: sticky;
-        top: 0;
-        z-index: 40;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-      }
-      .sticky-header th {
-        position: sticky;
-        top: 0;
-        background-color: inherit;
-      }
-      .sticky-footer {
-        position: sticky;
-        bottom: 0;
-        z-index: 20;
-        box-shadow: 0 -1px 2px rgba(0,0,0,0.05);
-      }
-      .sticky-cell-left {
-        position: sticky;
-        left: 0;
-        z-index: 10;
-        background-color: inherit;
-      }
-      .header-cell-left {
-        position: sticky;
-        left: 0;
-        z-index: 30;
-      }
-      .footer-cell-left {
-        position: sticky;
-        left: 0;
-        z-index: 30;
-      }
-      /* Nouvelles classes pour les en-têtes des années et mois */
-      .year-header {
-        position: sticky !important;
-        top: 0;
-        z-index: 20;
-        background-color: inherit;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      }
-      .month-header {
-        position: sticky !important;
-        top: 0;
-        z-index: 20;
-        background-color: inherit;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      }
-      /* Styles pour la visualisation des colonnes */
-      .table-grid-container {
-        overflow: auto;
-        position: relative;
-      }
-      /* Ajouter des ombres pour indiquer le défilement */
-      .table-grid-container::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        right: 0;
-        height: 100%;
-        width: 40px;
-        pointer-events: none;
-        background: linear-gradient(to right, transparent, rgba(255,255,255,0.2));
-        opacity: 0;
-        transition: opacity 0.3s;
-      }
-      .table-grid-container[data-can-scroll-right="true"]::after {
-        opacity: 1;
-      }
-      /* Style pour les mois qui permet de toujours voir le nom */
-      .month-label {
-        position: relative;
-      }
-      .month-label::before {
-        content: attr(data-month-name);
-        position: absolute;
-        top: -28px;
-        left: 50%;
-        transform: translateX(-50%);
-        padding: 2px 6px;
-        background-color: rgba(255, 255, 255, 0.9);
-        border: 1px solid #e2e8f0;
-        border-radius: 4px;
-        font-size: 0.75rem;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-        pointer-events: none;
-        z-index: 50;
-      }
-      .dark .month-label::before {
-        background-color: rgba(15, 23, 42, 0.9);
-        border-color: #334155;
-        color: #f8fafc;
-      }
-      .table-grid-container:hover .month-label:hover::before {
-        opacity: 1;
-      }
-    `
-    document.head.appendChild(style)
-    
-    return () => {
-      document.head.removeChild(style)
-    }
-  }, [])
-
-  // Initialiser les variables CSS au chargement pour l'effet de bordure
-  React.useEffect(() => {
-    if (tableContainerRef.current) {
-      const rect = tableContainerRef.current.getBoundingClientRect();
-      // Initialiser avec la position centrale
-      const centerX = rect.width / 2;
-      const centerY = rect.height / 2;
-      
-      tableContainerRef.current.style.setProperty('--mouse-x', `${centerX}px`);
-      tableContainerRef.current.style.setProperty('--mouse-y', `${centerY}px`);
-      tableContainerRef.current.style.setProperty('--gradient-direction', 'right');
-      tableContainerRef.current.style.setProperty('--gradient-position', '50%');
-    }
-  }, [data, isMaximized]); // Recalculer quand les données ou le mode maximisé changent
 
   // Suivre le curseur pour l'effet de bordure
   React.useEffect(() => {
@@ -554,7 +521,7 @@ const AccountingIncomeGridView = React.forwardRef<
       // Pour l'intensité, on utilise la proximité relative aux dimensions
       const relativeProximity = minDist / Math.max(rect.width, rect.height);
       const isNearEdge = relativeProximity < 0.2;
-      
+        
       // Ajuster la lueur en fonction de la proximité du bord
       if (isNearEdge) {
         containerRef.style.boxShadow = '0 0 20px rgba(37, 99, 235, 0.3)';
@@ -582,131 +549,158 @@ const AccountingIncomeGridView = React.forwardRef<
       document.removeEventListener('mousemove', handleMouseMove);
     };
   }, []);
-
-  // Gestion du défilement avec useRef
-  React.useEffect(() => {
-    if (tableRef.current) {
-      // Vérifier si on peut défiler horizontalement
-      const canScrollRight = tableRef.current!.scrollWidth > tableRef.current!.clientWidth;
-      tableRef.current!.setAttribute('data-can-scroll-right', canScrollRight.toString());
-      
-      // Ajouter un écouteur de défilement pour mettre à jour l'attribut
-      const handleScroll = () => {
-        const maxScrollLeft = tableRef.current!.scrollWidth - tableRef.current!.clientWidth;
-        const canScrollMore = tableRef.current!.scrollLeft < maxScrollLeft;
-        tableRef.current!.setAttribute('data-can-scroll-right', canScrollMore.toString());
-      };
-      
-      tableRef.current!.addEventListener('scroll', handleScroll);
-      
-      // Nettoyer l'écouteur lors du démontage
-      return () => {
-        if (tableRef.current) {
-          tableRef.current!.removeEventListener('scroll', handleScroll);
-        }
-      };
-    }
-  }, [data]);
-
-  // Fonction pour générer la cellule avec comparaison
-  const renderMonthCellWithComparison = React.useCallback((
-    amount: number, 
-    comparisonAmount: number | null,
-    comparisonType: 'previous' | 'average',
-    isSubcategory: boolean = false
-  ) => {
-    // Fonction pour calculer la différence en pourcentage
-    const calculatePercentDifference = (current: number, reference: number): number => {
-      if (reference === 0) return current > 0 ? 100 : 0
-      return ((current - reference) / Math.abs(reference)) * 100
-    }
-
-    // Fonction pour formater l'affichage du pourcentage
-    const formatPercentage = (value: number): string => {
-      const sign = value > 0 ? '+' : ''
-      return `${sign}${value.toFixed(1)}%`
-    }
-
-    // Fonction pour déterminer la classe de couleur en fonction de la différence
-    const getDifferenceColorClass = (difference: number): string => {
-      if (Math.abs(difference) < 0.5) return 'text-slate-500 dark:text-slate-400' // Pas de changement significatif
-      return difference > 0 
-        ? 'text-green-600 dark:text-green-400' // Augmentation
-        : 'text-red-600 dark:text-red-400'     // Diminution
-    }
-    
-    const fontSizeClass = isSubcategory ? 'text-xs' : 'text-sm'
-    const fontWeightClass = isSubcategory ? 'font-normal' : 'font-medium'
-    
-    if (comparisonAmount === null) {
-      return (
-        <div className={`text-right ${fontSizeClass} ${fontWeightClass}`}>
-          {formatCurrency(amount)}
-        </div>
-      )
-    }
-
-    const difference = amount - comparisonAmount
-    const percentDifference = calculatePercentDifference(amount, comparisonAmount)
-    const percentClass = getDifferenceColorClass(percentDifference)
-    
-    return (
-      <div className={`text-right ${fontSizeClass} ${fontWeightClass} flex items-center justify-end gap-2`}>
-        <div>{formatCurrency(amount)}</div>
-        <div className={`flex flex-col items-end text-2xs ${percentClass}`}>
-          <span className="text-slate-500 dark:text-slate-400">({formatCurrency(Math.abs(difference))})</span>
-          {formatPercentage(percentDifference)}
-        </div>
-      </div>
-    )
-  }, [])
   
-  // Fonction pour obtenir la valeur de référence pour la comparaison
-  const getComparisonValue = React.useCallback((
-    data: {[month: string]: number}, 
-    month: string, 
-    mode: LocalComparisonMode, 
-    selectedMonths: string[]
-  ): number | null => {
-    if (mode === 'month-to-month') {
-      // Comparaison avec le mois précédent
-      const monthNum = parseInt(month)
-      const prevMonth = String(monthNum - 1).padStart(2, '0')
+  // Ajouter cette partie au style global
+  React.useEffect(() => {
+    const style = document.createElement('style')
+    style.textContent = `
+      .sticky-header {
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        background-color: inherit;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      }
+      .sticky-footer {
+        position: sticky;
+        bottom: 0;
+        z-index: 20;
+        box-shadow: 0 -1px 2px rgba(0,0,0,0.05);
+      }
+      .sticky-cell-left {
+        position: sticky;
+        left: 0;
+        z-index: 10;
+        background-color: inherit;
+      }
+      .header-cell-left {
+        position: sticky;
+        left: 0;
+        z-index: 30;
+      }
+      .footer-cell-left {
+        position: sticky;
+        left: 0;
+        z-index: 30;
+      }
+      /* Nouvelles classes pour les en-têtes des années et mois */
+      .year-header {
+        position: sticky !important;
+        top: 0;
+        z-index: 20;
+        background-color: inherit;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      }
+      .month-header {
+        position: sticky !important;
+        top: 0;
+        z-index: 20;
+        background-color: inherit;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      }
+      /* Styles pour la visualisation des colonnes */
+      .table-grid-container {
+        overflow: auto;
+        position: relative;
+        height: 100%;
+        max-height: calc(100vh - 200px);
+      }
+      /* Ajouter des ombres pour indiquer le défilement */
+      .table-grid-container::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        height: 100%;
+        width: 40px;
+        pointer-events: none;
+        background: linear-gradient(to right, transparent, rgba(255,255,255,0.2));
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+      .table-grid-container[data-can-scroll-right="true"]::after {
+        opacity: 1;
+      }
+      /* Style pour les mois qui permet de toujours voir le nom */
+      .month-label {
+        position: relative;
+      }
+      .month-label::before {
+        content: attr(data-month-name);
+        position: absolute;
+        top: -28px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 2px 6px;
+        background-color: rgba(255, 255, 255, 0.9);
+        border: 1px solid #e2e8f0;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        pointer-events: none;
+        z-index: 50;
+      }
+      .dark .month-label::before {
+        background-color: rgba(15, 23, 42, 0.9);
+        border-color: #334155;
+        color: #f8fafc;
+      }
+      .table-grid-container:hover .month-label:hover::before {
+        opacity: 1;
+      }
+      .text-2xs {
+        font-size: 0.65rem;
+        line-height: 0.9rem;
+      }
+      .year-column-transition {
+        transition: background-color 0.2s ease-in-out;
+      }
+      .year-column-active {
+        font-weight: 500;
+      }
       
-      // Si c'est janvier, il n'y a pas de mois précédent dans l'année
-      if (monthNum === 1) return null
+      /* Styles pour faire fonctionner correctement le défilement avec flex */
+      .accounting-table-wrapper {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
       
-      return data[prevMonth] ?? null
-    } else if (mode === 'year-average' || mode === 'month-to-average') {
-      // Comparaison avec la moyenne de l'année
-      const sumOtherMonths = Object.entries(data)
-        .filter(([m]) => m !== month)
-        .reduce((sum, [_, value]) => sum + value, 0)
-      
-      const otherMonthsCount = Object.keys(data).length - 1
-      
-      return otherMonthsCount > 0 ? sumOtherMonths / otherMonthsCount : null
-    } else if (mode === 'selected-months') {
-      // Comparaison avec la moyenne des mois sélectionnés
-      if (selectedMonths.length === 0) return null
-      
-      const sumSelectedMonths = selectedMonths
-        .filter(m => m !== month && data[m] !== undefined)
-        .reduce((sum, m) => sum + (data[m] || 0), 0)
-      
-      const selectedMonthsCount = selectedMonths.filter(m => m !== month && data[m] !== undefined).length
-      
-      return selectedMonthsCount > 0 ? sumSelectedMonths / selectedMonthsCount : null
-    }
+      .table-container-with-gradient {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+    `
+    document.head.appendChild(style)
     
-    return null
+    return () => {
+      document.head.removeChild(style)
+    }
   }, [])
+
+  // Initialiser les variables CSS au chargement pour l'effet de bordure
+  React.useEffect(() => {
+    if (tableContainerRef.current) {
+      const rect = tableContainerRef.current.getBoundingClientRect();
+      // Initialiser avec la position centrale
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      
+      tableContainerRef.current.style.setProperty('--mouse-x', `${centerX}px`);
+      tableContainerRef.current.style.setProperty('--mouse-y', `${centerY}px`);
+      tableContainerRef.current.style.setProperty('--gradient-direction', 'right');
+      tableContainerRef.current.style.setProperty('--gradient-position', '50%');
+    }
+  }, [data, isMaximized]); // Recalculer quand les données ou le mode maximisé changent
 
   const columns = React.useMemo(() => {
     // Création des colonnes de base
     const baseColumns: ColumnDef<CategoryData>[] = [
       {
-      accessorKey: "name",
+        accessorKey: "name",
         header: ({ column }) => (
           <div className="flex items-center">
             <button
@@ -718,12 +712,12 @@ const AccountingIncomeGridView = React.forwardRef<
             </button>
           </div>
         ),
-      cell: ({ row }) => {
+        cell: ({ row }) => {
           const category = row.original as CategoryData
-        const isExpanded = expandedCategories.has(category.id)
-        const hasSubcategories = category.subcategories.length > 0
-        
-        return (
+          const isExpanded = expandedCategories.has(category.id)
+          const hasSubcategories = category.subcategories.length > 0
+          
+          return (
             <div className="flex items-center">
               {hasSubcategories && (
                 <button
@@ -741,10 +735,10 @@ const AccountingIncomeGridView = React.forwardRef<
               <span className="font-medium text-slate-800 dark:text-slate-200">
                 {category.name}
               </span>
-          </div>
-        )
+            </div>
+          )
+        }
       }
-    }
     ]
     
     // Trier les années dans l'ordre chronologique (plus ancienne à gauche)
@@ -860,28 +854,36 @@ const AccountingIncomeGridView = React.forwardRef<
     }
     
     // Combiner toutes les colonnes
-    return baseColumns
-  }, [years, expandedYear, expandedCategories, comparisonMode, selectedMonths, toggleCategory, toggleYear, renderMonthCellWithComparison, getComparisonValue])
+    return [...baseColumns]
+  }, [years, expandedYear, expandedCategories, comparisonMode, toggleCategory, toggleYear, renderMonthCellWithComparison, getComparisonValue])
 
+  // Ajout d'une fonction utilitaire pour détecter si c'est une colonne d'année
+  const isYearColumn = (cellId: string) => {
+    return years.some(year => cellId.includes(`year-${year}`))
+  }
+
+  // Fonction pour déterminer si une cellule est la colonne de l'année active
+  const isActiveYearColumn = (cellId: string) => {
+    return expandedYear && cellId.includes(`year-${expandedYear}`)
+  }
+  
+  // Corriger l'erreur de TypeScript pour filterFns manquant
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
     onSortingChange: setSorting,
     getSortedRowModel: getSortedRowModel(),
-    onColumnFiltersChange: setColumnFilters,
-    getFilteredRowModel: getFilteredRowModel(),
     state: {
-      sorting,
-      columnFilters
+      sorting
     },
     filterFns: {
       dateRange: (row, id, value: [Date, Date]) => {
         const cellValue = row.getValue(id) as string
         const date = new Date(cellValue)
         return date >= value[0] && date <= value[1]
-      },
-    },
+      }
+    } 
   })
 
   if (isLoading) {
@@ -895,136 +897,74 @@ const AccountingIncomeGridView = React.forwardRef<
 
   if (error) {
     return (
-      <div className={cn(
-        "p-4 transition-all duration-300 accounting-table-wrapper", 
-        className,
-        isMaximized && "p-0 h-[calc(100vh-45px)]"
-      )} style={{ height: isMaximized ? 'calc(100vh - 45px)' : '100%' }}>
-        <div className="rounded-md border dark:border-slate-700 h-full overflow-hidden">
-          <div className="p-6 flex flex-col items-center justify-center h-full">
-            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div className="text-slate-700 dark:text-slate-300 font-medium text-center mb-2">Erreur de connexion</div>
-            <div className="text-slate-500 dark:text-slate-400 text-sm text-center mb-4">{error}</div>
-            <button 
-              onClick={() => {
-                setError(null);
-                setIsLoading(true);
-                fetchData();
-              }}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
-            >
-              Réessayer
-            </button>
-          </div>
+      <div className="flex flex-col items-center justify-center h-screen">
+        <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
         </div>
+        <div className="text-xl font-medium text-center mb-2">Erreur de connexion</div>
+        <div className="text-slate-500 dark:text-slate-400 text-center mb-4">{error}</div>
+        <button 
+          onClick={() => {
+            setError(null);
+            setIsLoading(true);
+            fetchData();
+          }}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+        >
+          Réessayer
+        </button>
       </div>
     )
   }
 
-  // Fonction pour déterminer si une cellule est une colonne d'année
-  const isYearColumn = (cellId: string) => {
-    return years.some(year => cellId.includes(`year-${year}`))
-  }
-
-  // Fonction pour déterminer si une cellule est la colonne de l'année active
-  const isActiveYearColumn = (cellId: string) => {
-    return expandedYear && cellId.includes(`year-${expandedYear}`)
-  }
-      
-      return (
-                <div className={cn(
-      "p-4 transition-all duration-300 accounting-table-wrapper", 
-      className,
-      isMaximized && "p-0 h-[calc(100vh-45px)]"
-    )} style={{ height: isMaximized ? 'calc(100vh - 45px)' : '100%' }}>
+  return (
+    <div className={cn("p-4 h-full flex flex-col", className)}>
       <div 
         ref={tableContainerRef}
-        className={`rounded-md border dark:border-slate-700 h-full overflow-hidden table-container-with-gradient ${className} ${isMaximized ? "shadow-lg" : ""}`}
+        className="rounded-md border dark:border-slate-700 h-full overflow-hidden table-container-with-gradient"
         style={{ 
           borderRadius: '12px',
-          border: '1px solid transparent',
+          border: '2px solid transparent',
           backgroundClip: 'padding-box',
           overflow: 'hidden',
           boxShadow: '0 0 15px rgba(37, 99, 235, 0.1)',
-          transition: 'box-shadow 0.3s ease'
+          transition: 'box-shadow 0.3s ease',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column'
         }}
       >
         <div 
-          className="overflow-auto h-full dark:bg-slate-900 table-grid-container" 
-          style={{ maxWidth: '100%' }}
-          ref={tableRef}
+          className="overflow-auto flex-1 dark:bg-slate-900 table-grid-container"
+          style={{ 
+            maxWidth: '100%',
+            maxHeight: '100%'
+          }}
+          ref={tableRef => {
+            if (tableRef) {
+              // Vérifier si on peut défiler horizontalement
+              const canScrollRight = tableRef.scrollWidth > tableRef.clientWidth;
+              tableRef.setAttribute('data-can-scroll-right', canScrollRight.toString());
+              
+              // Ajouter un écouteur de défilement pour mettre à jour l'attribut
+              const handleScroll = () => {
+                const maxScrollLeft = tableRef.scrollWidth - tableRef.clientWidth;
+                const canScrollMore = tableRef.scrollLeft < maxScrollLeft;
+                tableRef.setAttribute('data-can-scroll-right', canScrollMore.toString());
+              };
+              
+              tableRef.addEventListener('scroll', handleScroll);
+              
+              // Nettoyer l'écouteur lors du démontage
+              const currentTableRef = tableRef;
+              return () => {
+                currentTableRef.removeEventListener('scroll', handleScroll);
+              };
+            }
+          }}
         >
-          <style jsx global>{`
-            .text-2xs {
-              font-size: 0.65rem;
-              line-height: 0.9rem;
-            }
-            
-            .month-column {
-              min-width: 150px;
-            }
-            
-            .subcategory-name {
-              font-size: 0.875rem;
-              color: #64748b;
-            }
-            
-            .dark .subcategory-name {
-              color: #94a3b8;
-            }
-
-            /* Styles pour l'effet de bordure */
-            .table-container-with-gradient {
-              --light-start-color: #e2e8f0;
-              --light-mid-color: #2563eb;
-              --light-focus-color: #3b82f6;
-              --light-deep-color: #1e40af;
-              --dark-start-color: #334155;
-              --dark-mid-color: #3b82f6;
-              --dark-focus-color: #60a5fa;
-              --dark-deep-color: #2563eb;
-              transition: background 0.3s ease, box-shadow 0.3s ease;
-              background: linear-gradient(#fff, #fff) padding-box, 
-                       linear-gradient(to var(--gradient-direction, right), 
-                                     var(--light-start-color), 
-                                     var(--light-mid-color) var(--gradient-position, 50%), 
-                                     var(--light-start-color)) border-box !important;
-            }
-            
-            .dark .table-container-with-gradient {
-              background: linear-gradient(#0f172a, #0f172a) padding-box, 
-                       linear-gradient(to var(--gradient-direction, right), 
-                                      var(--dark-start-color), 
-                                      var(--dark-mid-color) var(--gradient-position, 50%), 
-                                      var(--dark-start-color)) border-box !important;
-            }
-            
-            .table-container-with-gradient[style*="--is-near-edge: 1"] {
-              --light-glow-color: rgba(37, 99, 235, 0.3);
-              --dark-glow-color: rgba(59, 130, 246, 0.3);
-              background: linear-gradient(#fff, #fff) padding-box, 
-                       linear-gradient(to var(--gradient-direction, right), 
-                                     var(--light-start-color), 
-                                     var(--light-focus-color) calc(var(--min-dist) * 2%), 
-                                     var(--light-deep-color) calc(var(--min-dist) * 3%), 
-                                     var(--light-start-color)) border-box !important;
-              box-shadow: 0 0 20px var(--light-glow-color) !important;
-            }
-            
-            .dark .table-container-with-gradient[style*="--is-near-edge: 1"] {
-              background: linear-gradient(#0f172a, #0f172a) padding-box, 
-                       linear-gradient(to var(--gradient-direction, right), 
-                                      var(--dark-start-color), 
-                                      var(--dark-focus-color) calc(var(--min-dist) * 2%), 
-                                      var(--dark-deep-color) calc(var(--min-dist) * 3%), 
-                                      var(--dark-start-color)) border-box !important;
-              box-shadow: 0 0 20px var(--dark-glow-color) !important;
-            }
-          `}</style>
           <Table className="relative w-auto min-w-full">
             <TableHeader className="sticky-header">
               {table.getHeaderGroups().map((headerGroup) => (
@@ -1048,20 +988,20 @@ const AccountingIncomeGridView = React.forwardRef<
                       )}
                     </TableHead>
                   ))}
-              </TableRow>
+                </TableRow>
               ))}
             </TableHeader>
             <TableBody>
               {table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => (
-                    <React.Fragment key={row.id}>
+                  <React.Fragment key={row.id}>
                     <TableRow 
                       className="border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer"
                     >
                       {row.getVisibleCells().map((cell, index) => (
-                            <TableCell 
-                              key={cell.id}
-                              className={cn(
+                        <TableCell 
+                          key={cell.id}
+                          className={cn(
                             "p-4 text-slate-700 dark:text-slate-300 whitespace-nowrap year-column-transition",
                             isYearColumn(cell.id) && "bg-blue-50/30 dark:bg-blue-900/10",
                             isActiveYearColumn(cell.id) && "bg-blue-100/50 dark:bg-blue-800/20",
@@ -1070,12 +1010,12 @@ const AccountingIncomeGridView = React.forwardRef<
                           )}
                           style={cell.column.columnDef.meta?.style}
                           data-month-name={cell.column.columnDef.meta?.monthName || ""}
-                            >
-                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                            </TableCell>
+                        >
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </TableCell>
                       ))}
-                      </TableRow>
-                      
+                    </TableRow>
+                    
                     {/* Sous-catégories (affichées uniquement si la catégorie est développée) */}
                     {expandedCategories.has((row.original as CategoryData).id) && (
                       (row.original as CategoryData).subcategories.map((subcategory) => (
@@ -1084,19 +1024,19 @@ const AccountingIncomeGridView = React.forwardRef<
                           className="bg-slate-50/50 dark:bg-slate-800/20 border-b dark:border-slate-700/50"
                         >
                           <TableCell className="pl-10 p-3 text-slate-600 dark:text-slate-400 whitespace-nowrap subcategory-name sticky-cell-left bg-slate-50 dark:bg-slate-800">
-                                    {subcategory.name}
-                                </TableCell>
-                                
+                            {subcategory.name}
+                          </TableCell>
+                          
                           {/* Cellules pour les années (non-active) */}
                           {years.filter(year => year !== expandedYear).map(year => (
-                                  <TableCell 
+                            <TableCell 
                               key={`${subcategory.id}-year-${year}`}
                               className="p-3 text-right text-xs font-normal text-slate-700 dark:text-slate-300 whitespace-nowrap bg-blue-50/30 dark:bg-blue-900/10 year-column-transition"
                             >
                               {formatCurrency(subcategory.yearlyData[year]?.total || 0)}
-                                  </TableCell>
-                                ))}
-                                
+                            </TableCell>
+                          ))}
+                          
                           {/* Cellule pour l'année active */}
                           {expandedYear && (
                             <TableCell 
@@ -1131,8 +1071,8 @@ const AccountingIncomeGridView = React.forwardRef<
                           }
                         </TableRow>
                       ))
-                      )}
-                    </React.Fragment>
+                    )}
+                  </React.Fragment>
                 ))
               ) : (
                 <TableRow>
@@ -1193,14 +1133,14 @@ const AccountingIncomeGridView = React.forwardRef<
                     selectedMonths
                   )
                   
-                    return (
+                  return (
                     <TableCell 
                       key={`total-${expandedYear}-${month}`} 
                       className="p-4 text-right font-bold text-slate-800 dark:text-white whitespace-nowrap"
                     >
                       {renderMonthCellWithComparison(monthTotal, comparisonValue, comparisonMode === 'month-to-month' ? 'previous' : 'average')}
-                      </TableCell>
-                    )
+                    </TableCell>
+                  )
                 })}
               </TableRow>
             </TableFooter>
@@ -1211,6 +1151,6 @@ const AccountingIncomeGridView = React.forwardRef<
   )
 })
 
-AccountingIncomeGridView.displayName = "AccountingIncomeGridView";
+SimpleAccountingView.displayName = "SimpleAccountingView";
 
-export { AccountingIncomeGridView };
+export { SimpleAccountingView }; 

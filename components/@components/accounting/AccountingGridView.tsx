@@ -105,6 +105,7 @@ const AccountingGridView = React.forwardRef<
   const [data, setData] = React.useState<CategoryData[]>([])
   const [totalAmounts, setTotalAmounts] = React.useState<{[year: string]: number}>({})
   const [isLoading, setIsLoading] = React.useState(true)
+  const [error, setError] = React.useState<string | null>(null)
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [expandedCategories, setExpandedCategories] = React.useState<Set<string>>(new Set())
@@ -351,6 +352,7 @@ const AccountingGridView = React.forwardRef<
     } catch (error) {
       console.error('Error fetching data:', error)
       setIsLoading(false)
+      setError('Erreur lors de la récupération des données. Veuillez réessayer plus tard.')
     }
   }
 
@@ -864,43 +866,39 @@ const AccountingGridView = React.forwardRef<
 
   if (isLoading) {
     return (
+      <div className="flex flex-col items-center justify-center h-screen">
+        <div className="w-16 h-16 border-4 border-t-blue-500 border-gray-200 rounded-full animate-spin"></div>
+        <div className="mt-4 text-lg font-medium">Chargement des données...</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
       <div className={cn(
         "p-4 transition-all duration-300 accounting-table-wrapper", 
         className,
         isMaximized && "p-0 h-[calc(100vh-45px)]"
       )} style={{ height: isMaximized ? 'calc(100vh - 45px)' : '100%' }}>
         <div className="rounded-md border dark:border-slate-700 h-full overflow-hidden">
-          <div className="p-6">
-            <div className="flex items-center space-x-4 mb-6">
-              <Skeleton className="h-8 w-40 rounded-md" />
-              <Skeleton className="h-8 w-24 rounded-md" />
-              <Skeleton className="h-8 w-32 rounded-md ml-auto" />
+          <div className="p-6 flex flex-col items-center justify-center h-full">
+            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
             </div>
-            
-            <div className="space-y-3">
-              <div className="grid grid-cols-4 gap-4">
-                <Skeleton className="h-10 w-full rounded-md bg-slate-200 dark:bg-slate-700" />
-                <Skeleton className="h-10 w-full rounded-md bg-blue-100 dark:bg-blue-900/30" />
-                <Skeleton className="h-10 w-full rounded-md bg-blue-100 dark:bg-blue-900/30" />
-                <Skeleton className="h-10 w-full rounded-md bg-blue-100 dark:bg-blue-900/30" />
-              </div>
-              
-              {Array.from({ length: 5 }).map((_, index) => (
-                <div key={index} className="grid grid-cols-4 gap-4" style={{ opacity: 1 - index * 0.15 }}>
-                  <Skeleton className="h-8 w-full rounded-md" />
-                  <Skeleton className="h-8 w-full rounded-md" />
-                  <Skeleton className="h-8 w-full rounded-md" />
-                  <Skeleton className="h-8 w-full rounded-md" />
-                </div>
-              ))}
-              
-              <div className="grid grid-cols-4 gap-4 mt-6 pt-4 border-t dark:border-slate-700">
-                <Skeleton className="h-10 w-full rounded-md bg-slate-200 dark:bg-slate-700" />
-                <Skeleton className="h-10 w-full rounded-md bg-slate-200 dark:bg-slate-700" />
-                <Skeleton className="h-10 w-full rounded-md bg-slate-200 dark:bg-slate-700" />
-                <Skeleton className="h-10 w-full rounded-md bg-slate-200 dark:bg-slate-700" />
-              </div>
-            </div>
+            <div className="text-slate-700 dark:text-slate-300 font-medium text-center mb-2">Erreur de connexion</div>
+            <div className="text-slate-500 dark:text-slate-400 text-sm text-center mb-4">{error}</div>
+            <button 
+              onClick={() => {
+                setError(null);
+                setIsLoading(true);
+                fetchData();
+              }}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+            >
+              Réessayer
+            </button>
           </div>
         </div>
       </div>

@@ -5,8 +5,7 @@ import { Plus, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { AccountingFilters, ComparisonMode } from "./AccountingFilters"
-import { AccountingGridView } from "./AccountingGridView"
-import { AccountingIncomeGridView } from "./AccountingIncomeGridView"
+import { SimpleAccountingView } from "./SimpleAccountingView"
 import { AddTransactionDialog } from "@/components/transactions/add-transaction-dialog"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -48,7 +47,7 @@ export function AccountingPage() {
     }
   }
 
-  const handleToggleCategories = () => {
+  const handleToggleAllCategories = () => {
     if (activeTab === "expenses") {
       expensesGridViewRef.current?.toggleAllCategories()
     } else {
@@ -128,62 +127,40 @@ export function AccountingPage() {
 
           {/* Contenu principal basé sur l'onglet actif */}
           <div className={`${isMaximized ? 'h-full' : 'h-[calc(100%-40px)]'} flex flex-col`}>
-            {activeTab === "expenses" ? (
-              <>
-                <AccountingFilters
-                  onSearchChange={setSearchQuery}
-                  onDateRangeChange={setDateRange}
-                  onRefresh={handleRefresh}
-                  onToggleAllCategories={handleToggleCategories}
-                  onComparisonModeChange={handleComparisonModeChange}
+            <AccountingFilters
+              onSearchChange={setSearchQuery}
+              onRefresh={handleRefresh}
+              onToggleAllCategories={handleToggleAllCategories}
+              onComparisonModeChange={handleComparisonModeChange}
+              comparisonMode={comparisonMode}
+              className={isMaximized ? "mb-2" : "mb-2"}
+              onMaximize={handleMaximize}
+              isMaximized={isMaximized}
+            />
+
+            <div style={{ height: isMaximized ? "calc(100% - 55px)" : "calc(100% - 110px)" }}>
+              {activeTab === "expenses" ? (
+                <SimpleAccountingView
+                  ref={expensesGridViewRef}
+                  searchQuery={searchQuery}
+                  dateRange={dateRange}
+                  isIncome={false}
                   comparisonMode={comparisonMode}
-                  className={isMaximized ? "mb-2" : "mb-2"}
-                  onMaximize={handleMaximize}
+                  selectedMonths={selectedMonths}
                   isMaximized={isMaximized}
                 />
-
-                <div style={{ height: isMaximized ? "calc(100% - 55px)" : "calc(100% - 110px)" }}>
-                  <AccountingGridView
-                    ref={expensesGridViewRef}
-                    searchQuery={searchQuery}
-                    dateRange={dateRange}
-                    onSearchChange={setSearchQuery}
-                    onDateRangeChange={setDateRange}
-                    comparisonMode={comparisonMode}
-                    selectedMonths={selectedMonths}
-                    isMaximized={isMaximized}
-                  />
-                </div>
-              </>
-            ) : (
-              <div className="flex flex-col h-full income-tab-content" style={{ gap: 0 }}>
-                <AccountingFilters
-                  onSearchChange={setSearchQuery}
-                  onDateRangeChange={setDateRange}
-                  onRefresh={handleRefresh}
-                  onToggleAllCategories={handleToggleCategories}
-                  onComparisonModeChange={handleComparisonModeChange}
+              ) : (
+                <SimpleAccountingView
+                  ref={incomeGridViewRef}
+                  searchQuery={searchQuery}
+                  dateRange={dateRange}
+                  isIncome={true}
                   comparisonMode={comparisonMode}
-                  className={isMaximized ? "mb-2 h-[45px]" : "mb-0 h-[45px]"}
-                  onMaximize={handleMaximize}
+                  selectedMonths={selectedMonths}
                   isMaximized={isMaximized}
                 />
-
-                <div style={{ height: isMaximized ? "calc(100% - 55px)" : "calc(100% - 45px)" }}>
-                  <AccountingIncomeGridView
-                    ref={incomeGridViewRef}
-                    searchQuery={searchQuery}
-                    dateRange={dateRange}
-                    onSearchChange={setSearchQuery}
-                    onDateRangeChange={setDateRange}
-                    comparisonMode={comparisonMode}
-                    selectedMonths={selectedMonths}
-                    className="income-grid-view"
-                    isMaximized={isMaximized}
-                  />
-                </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </Tabs>
 
